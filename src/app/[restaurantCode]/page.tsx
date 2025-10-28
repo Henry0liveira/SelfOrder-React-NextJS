@@ -15,13 +15,13 @@ type Props = {
   };
 };
 
-export default function MenuPage({ params }: Props) {
+export default function MenuPage({ params: { restaurantCode } }: Props) {
   const [restaurant, setRestaurant] = useState<Restaurant | null | undefined>(undefined);
 
   useEffect(() => {
-    const foundRestaurant = findRestaurantByCode(params.restaurantCode);
+    const foundRestaurant = findRestaurantByCode(restaurantCode);
     setRestaurant(foundRestaurant);
-  }, [params.restaurantCode]);
+  }, [restaurantCode]);
 
   if (restaurant === undefined) {
     return (
