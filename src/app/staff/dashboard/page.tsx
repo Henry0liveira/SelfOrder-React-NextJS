@@ -105,16 +105,16 @@ export default function StaffDashboardPage() {
                 </Card>
             </Link>
             
-            <Link href="#" className="block transform hover:scale-105 transition-transform duration-300">
-                 <Card className="h-full shadow-xl text-center opacity-50 cursor-not-allowed">
+            <Link href="/staff/menu" className="block transform hover:scale-105 transition-transform duration-300">
+                 <Card className="h-full shadow-xl text-center">
                     <CardHeader>
-                         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary mb-4">
-                            <BookOpen className="h-10 w-10 text-muted-foreground" />
+                         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
+                            <BookOpen className="h-10 w-10 text-primary" />
                         </div>
                         <CardTitle className="text-2xl font-headline">Gerenciar Cardápio</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <CardDescription>Adicione, edite ou remova itens do seu cardápio. (Em breve)</CardDescription>
+                        <CardDescription>Adicione, edite ou remova itens do seu cardápio.</CardDescription>
                     </CardContent>
                 </Card>
             </Link>
