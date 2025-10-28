@@ -39,7 +39,7 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
         <div className="flex flex-wrap gap-2 justify-end">
           {order.status === 'new' && (
             <Button onClick={() => onStatusChange(order.id, 'in-progress')}>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Start Cooking
+              <Loader2 className="mr-2 h-4 w-4" /> Start Cooking
             </Button>
           )}
           {order.status === 'in-progress' && (

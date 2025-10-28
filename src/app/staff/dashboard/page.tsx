@@ -1,19 +1,25 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChefHat, ShoppingBasket, CheckCircle, UtensilsCrossed, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ordersData } from '@/lib/mock-data';
+import { ordersData as generateOrdersData } from '@/lib/mock-data';
 import type { Order, OrderStatus } from '@/types';
 import { OrderCard } from '@/components/order-card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function StaffDashboardPage() {
-  const [orders, setOrders] = useState<Order[]>(ordersData);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setOrders(generateOrdersData);
+    setIsClient(true);
+  }, []);
 
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
     setOrders(prevOrders =>
@@ -28,6 +34,15 @@ export default function StaffDashboardPage() {
   };
 
   const renderOrderList = (status: OrderStatus) => {
+    if (!isClient) {
+      return (
+        <div className="text-center text-muted-foreground py-16">
+          <Loader2 className="w-12 h-12 animate-spin mx-auto" />
+          <p>Loading orders...</p>
+        </div>
+      )
+    }
+
     const filteredOrders = orders.filter(order => order.status === status);
     
     if (filteredOrders.length === 0) {
@@ -46,14 +61,17 @@ export default function StaffDashboardPage() {
     
     return (
       <div className="space-y-4">
-        {filteredOrders.map(order => (
-          <OrderCard key={order.id} order={order} onStatusChange={handleStatusChange} />
+        {filteredOrders.map((order, index) => (
+          <OrderCard key={`${order.id}-${index}`} order={order} onStatusChange={handleStatusChange} />
         ))}
       </div>
     );
   };
   
-  const getCount = (status: OrderStatus) => orders.filter(o => o.status === status).length;
+  const getCount = (status: OrderStatus) => {
+    if (!isClient) return 0;
+    return orders.filter(o => o.status === status).length;
+  }
 
   return (
     <div className="min-h-screen bg-secondary/30">
@@ -85,7 +103,7 @@ export default function StaffDashboardPage() {
                   <ShoppingBasket className="mr-2 h-4 w-4" /> New ({getCount('new')})
                 </TabsTrigger>
                 <TabsTrigger value="in-progress" className="py-2.5">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> In Progress ({getCount('in-progress')})
+                  <Loader2 className="mr-2 h-4 w-4" /> In Progress ({getCount('in-progress')})
                 </TabsTrigger>
                 <TabsTrigger value="ready" className="py-2.5">
                   <ChefHat className="mr-2 h-4 w-4" /> Ready ({getCount('ready')})
