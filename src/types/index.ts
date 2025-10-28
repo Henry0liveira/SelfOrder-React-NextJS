@@ -12,6 +12,7 @@ export type Restaurant = {
   id: string;
   name: string;
   code: string;
+  email: string;
   menu: MenuItem[];
 };
 

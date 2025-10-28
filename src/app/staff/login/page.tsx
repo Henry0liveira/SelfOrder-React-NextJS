@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 
 export default function StaffLoginPage() {
-  const [restaurantId, setRestaurantId] = useState('CORAL123');
+  const [email, setEmail] = useState('staff@coral.cafe');
   const [password, setPassword] = useState('password');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -30,7 +30,8 @@ export default function StaffLoginPage() {
 
     // Simulate API authentication
     setTimeout(() => {
-      if (restaurantId === 'CORAL123' && password === 'password') {
+      // In a real app, you would check against a database
+      if (email === 'staff@coral.cafe' && password === 'password') {
         toast({
           title: 'Login Successful',
           description: "Welcome back! Redirecting to your dashboard...",
@@ -62,13 +63,13 @@ export default function StaffLoginPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="restaurantId">Restaurant Code</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="restaurantId"
-                type="text"
-                placeholder="e.g., CORAL123"
-                value={restaurantId}
-                onChange={(e) => setRestaurantId(e.target.value.toUpperCase())}
+                id="email"
+                type="email"
+                placeholder="e.g., staff@yourrestaurant.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
               />
@@ -103,7 +104,7 @@ export default function StaffLoginPage() {
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Use code <code className="font-bold bg-muted p-1 rounded">CORAL123</code> and password <code className="font-bold bg-muted p-1 rounded">password</code> for demo.
+            Use email <code className="font-bold bg-muted p-1 rounded">staff@coral.cafe</code> and password <code className="font-bold bg-muted p-1 rounded">password</code> for demo.
           </p>
         </CardContent>
       </Card>

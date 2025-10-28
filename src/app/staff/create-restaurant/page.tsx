@@ -18,6 +18,7 @@ import Link from 'next/link';
 
 export default function CreateRestaurantPage() {
   const [restaurantName, setRestaurantName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -60,6 +61,18 @@ export default function CreateRestaurantPage() {
                 placeholder="e.g., The Tasty Spoon"
                 value={restaurantName}
                 onChange={(e) => setRestaurantName(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Login Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="e.g., staff@yourrestaurant.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
               />
