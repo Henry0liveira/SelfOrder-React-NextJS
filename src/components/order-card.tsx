@@ -28,8 +28,8 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
       <CardContent>
         <Separator className="my-4" />
         <ul className="space-y-2 text-sm">
-          {order.items.map(item => (
-            <li key={item.menuItem.id} className="flex justify-between">
+          {order.items.map((item, index) => (
+            <li key={`${item.menuItem.id}-${index}`} className="flex justify-between">
               <span>{item.quantity}x {item.menuItem.name}</span>
               <span className="font-mono">${(item.menuItem.price * item.quantity).toFixed(2)}</span>
             </li>
