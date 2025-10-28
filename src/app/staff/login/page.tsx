@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, LogIn, UtensilsCrossed, PlusCircle } from 'lucide-react';
+import { LogIn, UtensilsCrossed, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -95,7 +95,7 @@ export default function StaffLoginPage() {
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-2">Não tem uma conta?</p>
             <Button variant="outline" className="w-full" asChild>
-                <Link href="#">
+                <Link href="/staff/create-restaurant">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Criar restaurante
                 </Link>
