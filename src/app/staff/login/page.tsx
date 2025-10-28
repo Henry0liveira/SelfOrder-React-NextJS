@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, LogIn, UtensilsCrossed } from 'lucide-react';
+import { ArrowRight, LogIn, UtensilsCrossed, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
 
 export default function StaffLoginPage() {
   const [restaurantId, setRestaurantId] = useState('CORAL123');
@@ -88,7 +89,20 @@ export default function StaffLoginPage() {
               {!isLoading && <LogIn className="ml-2 h-4 w-4" />}
             </Button>
           </form>
-          <p className="mt-4 text-center text-xs text-muted-foreground">
+
+          <Separator className="my-6" />
+
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-2">Não tem uma conta?</p>
+            <Button variant="outline" className="w-full" asChild>
+                <Link href="#">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Criar restaurante
+                </Link>
+            </Button>
+          </div>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             Use code <code className="font-bold bg-muted p-1 rounded">CORAL123</code> and password <code className="font-bold bg-muted p-1 rounded">password</code> for demo.
           </p>
         </CardContent>
