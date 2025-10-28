@@ -18,7 +18,6 @@ import Link from 'next/link';
 
 export default function CreateRestaurantPage() {
   const [restaurantName, setRestaurantName] = useState('');
-  const [restaurantCode, setRestaurantCode] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -61,18 +60,6 @@ export default function CreateRestaurantPage() {
                 placeholder="e.g., The Tasty Spoon"
                 value={restaurantName}
                 onChange={(e) => setRestaurantName(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="restaurantCode">Restaurant Code</Label>
-              <Input
-                id="restaurantCode"
-                type="text"
-                placeholder="e.g., TASTY123"
-                value={restaurantCode}
-                onChange={(e) => setRestaurantCode(e.target.value.toUpperCase())}
                 required
                 disabled={isLoading}
               />
