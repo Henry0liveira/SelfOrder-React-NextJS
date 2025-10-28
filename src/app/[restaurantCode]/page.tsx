@@ -1,7 +1,7 @@
 "use client";
 
 import { findRestaurantByCode } from '@/lib/mock-data';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import { CartProvider } from '@/hooks/use-cart';
 import MenuView from '@/components/menu-view';
 import { UtensilsCrossed, Loader2 } from 'lucide-react';
@@ -17,11 +17,19 @@ type Props = {
 
 export default function MenuPage({ params: { restaurantCode } }: Props) {
   const [restaurant, setRestaurant] = useState<Restaurant | null | undefined>(undefined);
+  const router = useRouter();
 
   useEffect(() => {
+    // Check if customer data exists, if not, redirect to login for this restaurant
+    const customerData = localStorage.getItem(`customerData-${restaurantCode}`);
+    if (!customerData) {
+      router.push(`/${restaurantCode}/login`);
+      return;
+    }
+
     const foundRestaurant = findRestaurantByCode(restaurantCode);
     setRestaurant(foundRestaurant);
-  }, [restaurantCode]);
+  }, [restaurantCode, router]);
 
   if (restaurant === undefined) {
     return (
