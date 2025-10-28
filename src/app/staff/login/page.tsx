@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
-import { findRestaurantByEmail } from '@/lib/mock-data';
+import { restaurantData } from '@/lib/mock-data';
 
 export default function StaffLoginPage() {
   const [email, setEmail] = useState('staff@coral.cafe');
@@ -29,12 +29,19 @@ export default function StaffLoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API authentication
+    // Simulate API authentication by checking localStorage
     setTimeout(() => {
-      const restaurant = findRestaurantByEmail(email);
+      const storedRestaurants = localStorage.getItem('restaurants');
+      const allRestaurants = storedRestaurants ? JSON.parse(storedRestaurants) : restaurantData;
+
+      const restaurant = allRestaurants.find(
+        (r: any) => r.email.toLowerCase() === email.toLowerCase() && r.password === password
+      );
       
-      // In a real app, you would also check the password against a hashed version in the database
-      if (restaurant && password === 'password') {
+      if (restaurant) {
+        // Save logged-in restaurant to localStorage for session persistence
+        localStorage.setItem('loggedInRestaurant', JSON.stringify(restaurant));
+        
         toast({
           title: 'Login Successful',
           description: "Welcome back! Redirecting to your dashboard...",

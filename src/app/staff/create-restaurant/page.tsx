@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { restaurantData } from '@/lib/mock-data';
 
 export default function CreateRestaurantPage() {
   const [restaurantName, setRestaurantName] = useState('');
@@ -28,13 +29,43 @@ export default function CreateRestaurantPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call to create a new restaurant
+    // Simulate API call to create and save a new restaurant
     setTimeout(() => {
+      const storedRestaurants = localStorage.getItem('restaurants');
+      // Initialize with mock data if no restaurants are in localStorage
+      const allRestaurants = storedRestaurants ? JSON.parse(storedRestaurants) : restaurantData;
+
+      // Check if email already exists
+      const emailExists = allRestaurants.some((r: any) => r.email.toLowerCase() === email.toLowerCase());
+      if (emailExists) {
+        toast({
+          title: 'Error',
+          description: 'An account with this email already exists.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      const newRestaurantCode = `${restaurantName.substring(0, 4).toUpperCase()}${Math.floor(100 + Math.random() * 900)}`;
+
+      const newRestaurant = {
+        id: (allRestaurants.length + 1).toString(),
+        name: restaurantName,
+        code: newRestaurantCode,
+        email: email,
+        password: password, // In a real app, this should be hashed!
+        menu: [], // Start with an empty menu
+      };
+
+      allRestaurants.push(newRestaurant);
+      localStorage.setItem('restaurants', JSON.stringify(allRestaurants));
+
       toast({
         title: 'Restaurant Created!',
-        description: `Restaurant "${restaurantName}" is now ready.`,
+        description: `Restaurant "${restaurantName}" is now ready. Your code is ${newRestaurantCode}.`,
       });
-      // In a real app, you'd likely redirect to the dashboard or login
+      
       router.push('/staff/login'); 
     }, 1500);
   };

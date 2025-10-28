@@ -29,6 +29,7 @@ export default function CustomerPortal() {
 
     // Simulate API call
     setTimeout(() => {
+      // This function now reads from localStorage, ensuring it finds newly created restaurants
       const restaurant = findRestaurantByCode(code);
       if (restaurant) {
         router.push(`/${restaurant.code}`);

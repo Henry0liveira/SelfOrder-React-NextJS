@@ -9,6 +9,7 @@ export const restaurantData: Restaurant[] = [
     name: 'The Coral Cafe',
     code: 'CORAL123',
     email: 'staff@coral.cafe',
+    password: 'password', // Added for login purposes
     menu: [
       { id: 'm1', name: 'Gourmet Burger', description: 'Juicy beef patty, cheddar, and special sauce.', price: 12.99, category: 'Main Courses', imageUrl: images.find(i => i.id === 'burger_1')?.imageUrl!, imageHint: 'gourmet burger' },
       { id: 'm2', name: 'Pepperoni Pizza', description: 'Classic pizza with spicy pepperoni.', price: 15.50, category: 'Main Courses', imageUrl: images.find(i => i.id === 'pizza_1')?.imageUrl!, imageHint: 'pepperoni pizza' },
@@ -48,9 +49,12 @@ export const generateOrdersData = (restaurant: Restaurant = restaurantData[0]): 
 };
 
 export const findRestaurantByCode = (code: string): Restaurant | undefined => {
-  return restaurantData.find(r => r.code.toUpperCase() === code.toUpperCase());
+  const storedRestaurants = localStorage.getItem('restaurants');
+  const allRestaurants = storedRestaurants ? JSON.parse(storedRestaurants) : restaurantData;
+  return allRestaurants.find((r: Restaurant) => r.code.toUpperCase() === code.toUpperCase());
 };
 
-export const findRestaurantByEmail = (email: string): Restaurant | undefined => {
-    return restaurantData.find(r => r.email.toLowerCase() === email.toLowerCase());
-};
+// No longer needed as we check from a dynamic list in the login page
+// export const findRestaurantByEmail = (email: string): Restaurant | undefined => {
+//     return restaurantData.find(r => r.email.toLowerCase() === email.toLowerCase());
+// };

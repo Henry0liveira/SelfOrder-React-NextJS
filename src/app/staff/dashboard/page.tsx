@@ -1,110 +1,40 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { ChefHat, ShoppingBasket, CheckCircle, UtensilsCrossed, LogOut, Loader2 } from 'lucide-react';
+import { LogOut, UtensilsCrossed, ClipboardList, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { generateOrdersData } from '@/lib/mock-data';
-import type { Order, OrderStatus } from '@/types';
-import { OrderCard } from '@/components/order-card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function StaffDashboardPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+  const [restaurantName, setRestaurantName] = useState('');
 
   useEffect(() => {
-    // In a real app, this would be a real-time subscription.
-    // We'll use localStorage for this demo and poll for changes.
-    const loadOrders = () => {
-      const storedOrders = localStorage.getItem('orders');
-      if (storedOrders) {
-        const parsedOrders: Order[] = JSON.parse(storedOrders).map((o: any) => ({
-          ...o,
-          timestamp: new Date(o.timestamp), // Ensure timestamp is a Date object
-        }));
-        setOrders(parsedOrders.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-      } else {
-        // If no orders in localStorage, populate with mock data
-        const mockOrders = generateOrdersData();
-        setOrders(mockOrders.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-        localStorage.setItem('orders', JSON.stringify(mockOrders));
-      }
+    // In a real app, you'd get this from a proper session
+    const loggedInRestaurant = localStorage.getItem('loggedInRestaurant');
+    if (!loggedInRestaurant) {
+      router.push('/staff/login');
+    } else {
+      setRestaurantName(JSON.parse(loggedInRestaurant).name);
     }
-    
-    loadOrders();
-    setIsClient(true);
-
-    const interval = setInterval(loadOrders, 2000); // Check for new orders every 2 seconds
-    return () => clearInterval(interval);
-
-  }, []);
-
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    const updatedOrders = orders.map(order =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    
-    setOrders(updatedOrders);
-    localStorage.setItem('orders', JSON.stringify(updatedOrders));
-  };
+  }, [router]);
   
   const handleLogout = () => {
-    router.push('/');
+    localStorage.removeItem('loggedInRestaurant');
+    router.push('/staff/login');
   };
-
-  const renderOrderList = (status: OrderStatus) => {
-    if (!isClient) {
-      return (
-        <div className="text-center text-muted-foreground py-16">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto" />
-          <p>Loading orders...</p>
-        </div>
-      )
-    }
-
-    const filteredOrders = orders.filter(order => order.status === status);
-    
-    if (filteredOrders.length === 0) {
-      return (
-        <div className="text-center text-muted-foreground py-16">
-            <div className="flex items-center justify-center mb-4">
-              {status === 'new' && <ShoppingBasket className="w-12 h-12" />}
-              {status === 'in-progress' && <Loader2 className="w-12 h-12 animate-spin" />}
-              {status === 'ready' && <ChefHat className="w-12 h-12" />}
-              {status === 'completed' && <CheckCircle className="w-12 h-12" />}
-            </div>
-            <p>No {status} orders right now.</p>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="space-y-4">
-        {filteredOrders.map((order) => (
-          <OrderCard key={order.id} order={order} onStatusChange={handleStatusChange} />
-        ))}
-      </div>
-    );
-  };
-  
-  const getCount = (status: OrderStatus) => {
-    if (!isClient) return 0;
-    return orders.filter(o => o.status === status).length;
-  }
 
   return (
     <div className="min-h-screen bg-secondary/30">
       <header className="bg-card border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-                <Link href="/" className="flex items-center gap-2 font-bold text-lg">
+                <div className="flex items-center gap-2 font-bold text-lg">
                     <UtensilsCrossed className="h-6 w-6 text-primary" />
-                    <span className="font-headline">MenuQR Dashboard</span>
-                </Link>
+                    <span className="font-headline">{restaurantName}</span>
+                </div>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" /> Logout
                 </Button>
@@ -113,38 +43,40 @@ export default function StaffDashboardPage() {
       </header>
 
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="mb-6">
-            <h1 className="text-3xl font-bold font-headline">Incoming Orders</h1>
-            <p className="text-muted-foreground">Manage and track customer orders in real-time.</p>
+        <div className="mb-8 text-center">
+            <h1 className="text-4xl font-bold font-headline">Staff Dashboard</h1>
+            <p className="text-muted-foreground text-lg">Selecione uma opção para começar</p>
         </div>
 
-        <Card>
-          <CardContent className="p-0">
-            <Tabs defaultValue="new" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto p-1.5 rounded-none rounded-t-lg">
-                <TabsTrigger value="new" className="py-2.5">
-                  <ShoppingBasket className="mr-2 h-4 w-4" /> New ({getCount('new')})
-                </TabsTrigger>
-                <TabsTrigger value="in-progress" className="py-2.5">
-                  <Loader2 className="mr-2 h-4 w-4" /> In Progress ({getCount('in-progress')})
-                </TabsTrigger>
-                <TabsTrigger value="ready" className="py-2.5">
-                  <ChefHat className="mr-2 h-4 w-4" /> Ready ({getCount('ready')})
-                </TabsTrigger>
-                <TabsTrigger value="completed" className="py-2.5">
-                  <CheckCircle className="mr-2 h-4 w-4" /> Completed ({getCount('completed')})
-                </TabsTrigger>
-              </TabsList>
-
-              <div className="p-4 sm:p-6">
-                <TabsContent value="new">{renderOrderList('new')}</TabsContent>
-                <TabsContent value="in-progress">{renderOrderList('in-progress')}</TabsContent>
-                <TabsContent value="ready">{renderOrderList('ready')}</TabsContent>
-                <TabsContent value="completed">{renderOrderList('completed')}</TabsContent>
-              </div>
-            </Tabs>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Link href="/staff/orders" className="block transform hover:scale-105 transition-transform duration-300">
+                <Card className="h-full shadow-xl text-center">
+                    <CardHeader>
+                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
+                            <ClipboardList className="h-10 w-10 text-primary" />
+                        </div>
+                        <CardTitle className="text-2xl font-headline">Ver Pedidos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <CardDescription>Acompanhe os pedidos dos clientes em tempo real.</CardDescription>
+                    </CardContent>
+                </Card>
+            </Link>
+            
+            <Link href="#" className="block transform hover:scale-105 transition-transform duration-300">
+                 <Card className="h-full shadow-xl text-center opacity-50 cursor-not-allowed">
+                    <CardHeader>
+                         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary mb-4">
+                            <BookOpen className="h-10 w-10 text-muted-foreground" />
+                        </div>
+                        <CardTitle className="text-2xl font-headline">Gerenciar Cardápio</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <CardDescription>Adicione, edite ou remova itens do seu cardápio. (Em breve)</CardDescription>
+                    </CardContent>
+                </Card>
+            </Link>
+        </div>
       </main>
     </div>
   );
