@@ -36,11 +36,11 @@ export default function Home() {
             <CardDescription>Manage your menu and track incoming orders.</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-center h-full pt-6">
-            <Link href="/staff/login" legacyBehavior passHref>
-              <Button size="lg" className="w-full">
+            <Button size="lg" className="w-full" asChild>
+              <Link href="/staff/login">
                 Staff Login <ArrowRight className="ml-2" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
