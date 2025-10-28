@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import type { Restaurant } from '@/types';
+import type { Restaurant, Order } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,7 +29,23 @@ export default function MenuView({ restaurant }: MenuViewProps) {
     }, {} as Record<string, typeof restaurant.menu>);
 
     const handlePlaceOrder = () => {
-      // In a real app, this would send the order to the backend
+      const newOrder: Omit<Order, 'id'> = {
+        restaurantId: restaurant.id,
+        items: cartItems,
+        total: cartTotal,
+        status: 'new',
+        timestamp: new Date(),
+      };
+
+      // In a real app, this would send to a backend.
+      // We'll use localStorage for this demo.
+      const existingOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]').map((o: any) => ({...o, timestamp: new Date(o.timestamp)}));
+      const fullOrder: Order = {
+        ...newOrder,
+        id: `ORD${1001 + existingOrders.length}`,
+      }
+      localStorage.setItem('orders', JSON.stringify([fullOrder, ...existingOrders]));
+
       toast({
         title: "Order Placed!",
         description: "Your order has been sent to the kitchen.",

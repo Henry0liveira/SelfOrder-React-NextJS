@@ -5,7 +5,7 @@ import { ChefHat, ShoppingBasket, CheckCircle, UtensilsCrossed, LogOut, Loader2 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ordersData as generateOrdersData } from '@/lib/mock-data';
+import { generateOrdersData } from '@/lib/mock-data';
 import type { Order, OrderStatus } from '@/types';
 import { OrderCard } from '@/components/order-card';
 import Link from 'next/link';
@@ -17,16 +17,39 @@ export default function StaffDashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    setOrders(generateOrdersData);
+    // In a real app, this would be a real-time subscription.
+    // We'll use localStorage for this demo and poll for changes.
+    const loadOrders = () => {
+      const storedOrders = localStorage.getItem('orders');
+      if (storedOrders) {
+        const parsedOrders: Order[] = JSON.parse(storedOrders).map((o: any) => ({
+          ...o,
+          timestamp: new Date(o.timestamp), // Ensure timestamp is a Date object
+        }));
+        setOrders(parsedOrders.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+      } else {
+        // If no orders in localStorage, populate with mock data
+        const mockOrders = generateOrdersData();
+        setOrders(mockOrders.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+        localStorage.setItem('orders', JSON.stringify(mockOrders));
+      }
+    }
+    
+    loadOrders();
     setIsClient(true);
+
+    const interval = setInterval(loadOrders, 2000); // Check for new orders every 2 seconds
+    return () => clearInterval(interval);
+
   }, []);
 
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
+    const updatedOrders = orders.map(order =>
+      order.id === orderId ? { ...order, status: newStatus } : order
+    ).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    
+    setOrders(updatedOrders);
+    localStorage.setItem('orders', JSON.stringify(updatedOrders));
   };
   
   const handleLogout = () => {
@@ -61,8 +84,8 @@ export default function StaffDashboardPage() {
     
     return (
       <div className="space-y-4">
-        {filteredOrders.map((order, index) => (
-          <OrderCard key={`${order.id}-${index}`} order={order} onStatusChange={handleStatusChange} />
+        {filteredOrders.map((order) => (
+          <OrderCard key={order.id} order={order} onStatusChange={handleStatusChange} />
         ))}
       </div>
     );

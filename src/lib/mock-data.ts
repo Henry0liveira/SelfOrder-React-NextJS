@@ -19,7 +19,7 @@ export const restaurantData: Restaurant[] = [
   },
 ];
 
-const generateRandomOrders = (restaurant: Restaurant): Order[] => {
+export const generateOrdersData = (restaurant: Restaurant = restaurantData[0]): Order[] => {
   const statuses: OrderStatus[] = ['new', 'in-progress', 'ready', 'completed'];
   const orders: Order[] = [];
 
@@ -45,8 +45,6 @@ const generateRandomOrders = (restaurant: Restaurant): Order[] => {
   }
   return orders.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 };
-
-export const ordersData: Order[] = generateRandomOrders(restaurantData[0]);
 
 export const findRestaurantByCode = (code: string): Restaurant | undefined => {
   return restaurantData.find(r => r.code.toUpperCase() === code.toUpperCase());
