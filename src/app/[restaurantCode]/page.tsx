@@ -1,9 +1,13 @@
+"use client";
+
 import { findRestaurantByCode } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import { CartProvider } from '@/hooks/use-cart';
 import MenuView from '@/components/menu-view';
-import { UtensilsCrossed } from 'lucide-react';
+import { UtensilsCrossed, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import type { Restaurant } from '@/types';
 
 type Props = {
   params: {
@@ -11,8 +15,21 @@ type Props = {
   };
 };
 
-export default async function MenuPage({ params }: Props) {
-  const restaurant = findRestaurantByCode(params.restaurantCode);
+export default function MenuPage({ params }: Props) {
+  const [restaurant, setRestaurant] = useState<Restaurant | null | undefined>(undefined);
+
+  useEffect(() => {
+    const foundRestaurant = findRestaurantByCode(params.restaurantCode);
+    setRestaurant(foundRestaurant);
+  }, [params.restaurantCode]);
+
+  if (restaurant === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!restaurant) {
     notFound();
