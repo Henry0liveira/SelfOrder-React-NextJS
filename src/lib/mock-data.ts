@@ -50,3 +50,7 @@ export const generateOrdersData = (restaurant: Restaurant = restaurantData[0]): 
 export const findRestaurantByCode = (code: string): Restaurant | undefined => {
   return restaurantData.find(r => r.code.toUpperCase() === code.toUpperCase());
 };
+
+export const findRestaurantByEmail = (email: string): Restaurant | undefined => {
+    return restaurantData.find(r => r.email.toLowerCase() === email.toLowerCase());
+};

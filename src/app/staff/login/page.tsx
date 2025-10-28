@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
+import { findRestaurantByEmail } from '@/lib/mock-data';
 
 export default function StaffLoginPage() {
   const [email, setEmail] = useState('staff@coral.cafe');
@@ -30,8 +31,10 @@ export default function StaffLoginPage() {
 
     // Simulate API authentication
     setTimeout(() => {
-      // In a real app, you would check against a database
-      if (email === 'staff@coral.cafe' && password === 'password') {
+      const restaurant = findRestaurantByEmail(email);
+      
+      // In a real app, you would also check the password against a hashed version in the database
+      if (restaurant && password === 'password') {
         toast({
           title: 'Login Successful',
           description: "Welcome back! Redirecting to your dashboard...",
