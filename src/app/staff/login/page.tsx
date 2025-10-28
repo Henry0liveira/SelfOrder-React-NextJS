@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogIn, UtensilsCrossed, PlusCircle } from 'lucide-react';
+import { LogIn, UtensilsCrossed, PlusCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -112,6 +112,13 @@ export default function StaffLoginPage() {
                 </Link>
             </Button>
           </div>
+
+          <Button variant="link" className="w-full mt-4" asChild>
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar
+            </Link>
+          </Button>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
             Use email <code className="font-bold bg-muted p-1 rounded">staff@coral.cafe</code> and password <code className="font-bold bg-muted p-1 rounded">password</code> for demo.
