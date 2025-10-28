@@ -51,7 +51,7 @@ export default function MenuView({ restaurant }: MenuViewProps) {
         description: "Your order has been sent to the kitchen.",
       });
       clearCart();
-      router.push(`/${restaurant.code}/confirmation`);
+      router.push(`/${restaurant.code}/order/${fullOrder.id}`);
     };
 
     return (
