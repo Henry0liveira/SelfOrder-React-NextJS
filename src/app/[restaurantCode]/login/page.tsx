@@ -20,14 +20,10 @@ import type { Restaurant } from '@/types';
 import { findRestaurantByCode } from '@/lib/mock-data';
 import Link from 'next/link';
 
-type Props = {
-  params: {
-    restaurantCode: string;
-  };
-};
 
-export default function CustomerLoginPage({ params }: Props) {
-  const { restaurantCode } = params;
+export default function CustomerLoginPage() {
+  const params = useParams();
+  const restaurantCode = params.restaurantCode as string;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -38,11 +34,13 @@ export default function CustomerLoginPage({ params }: Props) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const foundRestaurant = findRestaurantByCode(restaurantCode);
-    if (foundRestaurant) {
-        setRestaurant(foundRestaurant);
-    } else {
-        router.push('/not-found');
+    if (restaurantCode) {
+        const foundRestaurant = findRestaurantByCode(restaurantCode);
+        if (foundRestaurant) {
+            setRestaurant(foundRestaurant);
+        } else {
+            router.push('/not-found');
+        }
     }
   }, [restaurantCode, router]);
 
