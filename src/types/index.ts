@@ -1,4 +1,5 @@
 
+
 export type MenuItem = {
   id: string;
   name: string;
@@ -25,6 +26,14 @@ export type CartItem = {
   quantity: number;
 };
 
+export type CustomerAccount = {
+  name: string;
+  email: string;
+  phone?: string;
+  password?: string; // Should be hashed in a real app
+  allowPromotions: boolean;
+};
+
 export type Order = {
   id: string;
   restaurantId: string;
@@ -32,5 +41,5 @@ export type Order = {
   total: number;
   status: OrderStatus;
   timestamp: Date;
-  customerEmail?: string;
+  customer?: CustomerAccount;
 };

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Home, ShoppingCart, ClipboardList, Loader2 } from 'lucide-react';
@@ -14,7 +15,7 @@ import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import { MinusCircle, PlusCircle, Trash2, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { Order } from '@/types';
+import type { Order, CustomerAccount } from '@/types';
 
 
 // We need to wrap the layout in the CartProvider so all pages have access to the cart
@@ -48,7 +49,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check if customer data exists, if not, redirect to login
     const customerData = localStorage.getItem(`customerData-${restaurantCode}`);
-    if (!customerData && !pathname.includes('/login')) {
+    if (!customerData && !pathname.includes('/login') && !pathname.includes('/signup')) {
       router.push(`/${restaurantCode}/login`);
       return;
     }
@@ -57,22 +58,30 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
     setRestaurant(foundRestaurant);
 
     const orders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]');
-    const customerEmail = customerData ? JSON.parse(customerData).email : null;
-    const latestOrderForCustomer = orders
-      .filter(o => o.restaurantId === foundRestaurant?.id && o.customerEmail === customerEmail)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+    const customer = customerData ? (JSON.parse(customerData) as CustomerAccount) : null;
+    if (customer) {
+      const latestOrderForCustomer = orders
+        .filter(o => o.restaurantId === foundRestaurant?.id && o.customer?.email === customer.email)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
 
-    if (latestOrderForCustomer) {
-      setLastOrderId(latestOrderForCustomer.id);
+      if (latestOrderForCustomer) {
+        setLastOrderId(latestOrderForCustomer.id);
+      }
     }
   }, [restaurantCode, router, pathname]);
 
   const handlePlaceOrder = () => {
-    const customerData = JSON.parse(localStorage.getItem(`customerData-${restaurantCode}`) || '{}');
+    const customerData = localStorage.getItem(`customerData-${restaurantCode}`);
+    if (!customerData) {
+      toast({ title: "Error", description: "You must be logged in to place an order.", variant: "destructive"});
+      router.push(`/${restaurantCode}/login`);
+      return;
+    }
+    const customer = JSON.parse(customerData) as CustomerAccount;
 
     const newOrder: Omit<Order, 'id'> = {
       restaurantId: restaurant!.id,
-      customerEmail: customerData.email,
+      customer: customer,
       items: cartItems,
       total: cartTotal,
       status: 'new',
@@ -87,8 +96,8 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
     localStorage.setItem('orders', JSON.stringify([fullOrder, ...existingOrders]));
 
     toast({
-      title: "Pedido realizado!",
-      description: "Seu pedido foi enviado para a cozinha.",
+      title: "Order placed!",
+      description: "Your order has been sent to the kitchen.",
     });
     
     setIsCartOpen(false); // Close the sheet
@@ -106,7 +115,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
   }
   
   // Don't show layout on login, confirmation, or not-found pages
-  if (pathname.includes('/login') || pathname.includes('/confirmation') || pathname.includes('/not-found') || !restaurant) {
+  if (pathname.includes('/login') || pathname.includes('/signup') || pathname.includes('/confirmation') || pathname.includes('/not-found') || !restaurant) {
       return <>{children}</>;
   }
 
@@ -206,4 +215,3 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
     </Sheet>
   );
 }
-
