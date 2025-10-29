@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,13 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Loader2, ShoppingBasket, ChefHat, CheckCircle2 } from 'lucide-react';
 import type { Order, OrderStatus } from '@/types';
-
-type Props = {
-  params: {
-    restaurantCode: string;
-    orderId: string;
-  };
-};
+import { useParams } from 'next/navigation';
 
 const statusConfig: Record<OrderStatus, { text: string; progress: number; icon: React.ReactNode }> = {
     'new': { text: 'Pedido recebido', progress: 25, icon: <ShoppingBasket className="h-8 w-8" /> },
@@ -24,14 +19,18 @@ const statusConfig: Record<OrderStatus, { text: string; progress: number; icon: 
 };
 
 
-export default function OrderStatusPage({ params }: Props) {
+export default function OrderStatusPage() {
+  const params = useParams();
+  const orderId = params.orderId as string;
+  const restaurantCode = params.restaurantCode as string;
+
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrder = () => {
       const allOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]').map((o: any) => ({...o, timestamp: new Date(o.timestamp)}));
-      const foundOrder = allOrders.find(o => o.id === params.orderId);
+      const foundOrder = allOrders.find(o => o.id === orderId);
       if (foundOrder) {
         setOrder(foundOrder);
       }
@@ -43,7 +42,7 @@ export default function OrderStatusPage({ params }: Props) {
     // Poll for updates every 2 seconds
     const interval = setInterval(fetchOrder, 2000);
     return () => clearInterval(interval);
-  }, [params.orderId]);
+  }, [orderId]);
 
   if (loading) {
     return (
@@ -63,7 +62,7 @@ export default function OrderStatusPage({ params }: Props) {
             <CardContent>
                 <p>Não conseguimos encontrar os detalhes do seu pedido.</p>
                 <Button asChild className="mt-4">
-                    <Link href={`/${params.restaurantCode}`}>Voltar ao Cardápio</Link>
+                    <Link href={`/${restaurantCode}`}>Voltar ao Cardápio</Link>
                 </Button>
             </CardContent>
         </Card>
@@ -123,10 +122,11 @@ export default function OrderStatusPage({ params }: Props) {
                 <p className="text-center text-green-600 font-semibold">Seu pedido foi concluído. Bom apetite!</p>
             )}
             <Button asChild size="lg" className="w-full" variant="outline">
-                <Link href={`/${params.restaurantCode}`}>Voltar ao Cardápio</Link>
+                <Link href={`/${restaurantCode}`}>Voltar ao Cardápio</Link>
             </Button>
         </CardFooter>
       </Card>
     </div>
   );
 }
+
