@@ -25,7 +25,8 @@ type Props = {
   };
 };
 
-export default function CustomerLoginPage({ params: { restaurantCode } }: Props) {
+export default function CustomerLoginPage({ params }: Props) {
+  const { restaurantCode } = params;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
