@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowRight, UtensilsCrossed, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,10 +48,18 @@ export default function CustomerLoginPage({ params }: Props) {
 
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email) {
+    if (!email) {
       toast({
-        title: 'Campos obrigatórios',
-        description: 'Por favor, preencha seu nome e e-mail.',
+        title: 'Email obrigatório',
+        description: 'Por favor, preencha seu e-mail para continuar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+     if (!name) {
+      toast({
+        title: 'Nome obrigatório',
+        description: 'Por favor, preencha seu nome para continuar.',
         variant: 'destructive',
       });
       return;
@@ -85,18 +94,6 @@ export default function CustomerLoginPage({ params }: Props) {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleContinue} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome Completo</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Seu nome"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
              <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input
@@ -105,6 +102,18 @@ export default function CustomerLoginPage({ params }: Props) {
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome Completo</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Seu nome"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
                 disabled={isLoading}
               />
