@@ -3,38 +3,56 @@
     {
       "id": "burger_1",
       "description": "A delicious gourmet burger with fresh toppings.",
-      "imageUrl": "https://images.unsplash.com/photo-1629148462972-98019342a52b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxnb3VybWV0JTIwYnVyZ2VyfGVufDB8fHx8MTc2MTY1NzE0MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1571091718767-18b5b1457add?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1172&q=80",
       "imageHint": "gourmet burger"
     },
     {
       "id": "pizza_1",
       "description": "A classic pepperoni pizza with melted cheese.",
-      "imageUrl": "https://images.unsplash.com/photo-1542282811-943ef1a977c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVwcGVyb25pJTIwcGl6emF8ZW58MHx8fHwxNzYxNjgyODQ1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
       "imageHint": "pepperoni pizza"
     },
     {
       "id": "salad_1",
       "description": "A fresh and healthy garden salad.",
-      "imageUrl": "https://images.unsplash.com/photo-1677653805080-59c57727c84e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHNhbGFkfGVufDB8fHx8MTc2MTY3NTQyMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
       "imageHint": "fresh salad"
     },
     {
       "id": "pasta_1",
       "description": "Spaghetti with a rich bolognese sauce.",
-      "imageUrl": "https://images.unsplash.com/photo-1598866594230-a7c12756260f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzcGFnaGV0dGklMjBib2xvZ25lc2V8ZW58MHx8fHwxNzYxNjUxMjg2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1598866594230-a7c12756260f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
       "imageHint": "spaghetti bolognese"
     },
     {
       "id": "dessert_1",
       "description": "A slice of rich chocolate cake.",
-      "imageUrl": "https://images.unsplash.com/photo-1626263468007-a9e0cf83f1ac?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjaG9jb2xhdGUlMjBjYWtlfGVufDB8fHx8MTc2MTY3OTg3Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1589923188902-c2ce384342a0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
       "imageHint": "chocolate cake"
     },
     {
       "id": "drink_1",
       "description": "A refreshing and colorful cocktail.",
-      "imageUrl": "https://images.unsplash.com/photo-1714596428132-08574e996bd9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjb2NrdGFpbCUyMGRyaW5rfGVufDB8fHx8MTc2MTYyMjYxMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1502849394244-a9b13e0e716e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
       "imageHint": "cocktail drink"
+    },
+    {
+      "id": "pasta_2",
+      "description": "Creamy spaghetti carbonara with bacon.",
+      "imageUrl": "https://images.unsplash.com/photo-1600803726830-743323a6f3a3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+      "imageHint": "spaghetti carbonara"
+    },
+    {
+      "id": "dessert_2",
+      "description": "A rich and airy chocolate mousse.",
+      "imageUrl": "https://images.unsplash.com/photo-1558501970-949f292025d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+      "imageHint": "chocolate mousse"
+    },
+    {
+      "id": "drink_2",
+      "description": "A glass of freshly squeezed orange juice.",
+      "imageUrl": "https://images.unsplash.com/photo-1600271886742-f049cd451bba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+      "imageHint": "orange juice"
     }
   ]
 }

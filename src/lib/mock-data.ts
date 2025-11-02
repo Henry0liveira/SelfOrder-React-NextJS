@@ -13,9 +13,9 @@ export const restaurantData: Restaurant[] = [
       { id: 'm1', name: 'Gourmet Burger', description: 'Juicy beef patty, cheddar, and special sauce.', price: 12.99, category: 'Main Courses', imageUrl: images.find(i => i.id === 'burger_1')?.imageUrl!, imageHint: 'gourmet burger' },
       { id: 'm2', name: 'Pepperoni Pizza', description: 'Classic pizza with spicy pepperoni.', price: 15.50, category: 'Main Courses', imageUrl: images.find(i => i.id === 'pizza_1')?.imageUrl!, imageHint: 'pepperoni pizza' },
       { id: 'm3', name: 'Garden Salad', description: 'Fresh greens, tomatoes, and cucumbers.', price: 8.00, category: 'Appetizers', imageUrl: images.find(i => i.id === 'salad_1')?.imageUrl!, imageHint: 'fresh salad' },
-      { id: 'm4', name: 'Spaghetti Bolognese', description: 'Rich meat sauce over pasta.', price: 14.00, category: 'Main Courses', imageUrl: images.find(i => i.id === 'pasta_1')?.imageUrl!, imageHint: 'spaghetti bolognese' },
-      { id: 'm5', name: 'Chocolate Lava Cake', description: 'Warm cake with a gooey center.', price: 7.50, category: 'Desserts', imageUrl: images.find(i => i.id === 'dessert_1')?.imageUrl!, imageHint: 'chocolate cake' },
-      { id: 'm6', name: 'Sunset Cocktail', description: 'A tropical mix of juices and rum.', price: 9.00, category: 'Drinks', imageUrl: images.find(i => i.id === 'drink_1')?.imageUrl!, imageHint: 'cocktail drink' },
+      { id: 'm4', name: 'Spaghetti Carbonara', description: 'Creamy pasta with bacon and cheese.', price: 14.00, category: 'Main Courses', imageUrl: images.find(i => i.id === 'pasta_2')?.imageUrl!, imageHint: 'spaghetti carbonara' },
+      { id: 'm5', name: 'Chocolate Mousse', description: 'Rich and airy chocolate dessert.', price: 7.50, category: 'Desserts', imageUrl: images.find(i => i.id === 'dessert_2')?.imageUrl!, imageHint: 'chocolate mousse' },
+      { id: 'm6', name: 'Orange Juice', description: 'Freshly squeezed orange juice.', price: 9.00, category: 'Drinks', imageUrl: images.find(i => i.id === 'drink_2')?.imageUrl!, imageHint: 'orange juice' },
     ],
   },
 ];
