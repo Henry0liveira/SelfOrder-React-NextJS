@@ -40,18 +40,15 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
   const firestore = useFirestore();
 
   const {user: customer, loading: userLoading} = useUser();
-  const {data: restaurants, loading: restaurantLoading} = useCollectionQuery<Restaurant>('restaurants', 'code', restaurantCode);
+  const {data: restaurants, loading: restaurantLoading} = useCollectionQuery<Restaurant>('restaurants', [{field: 'code', operator: '==', value: restaurantCode}]);
   const restaurant = restaurants?.[0];
 
-  const {data: orders, loading: ordersLoading} = useCollectionQuery<Order>(
-      restaurant?.id && customer?.uid ? 'orders' : '',
-      'customerUid',
-      customer?.uid || ''
+  const {data: customerOrders, loading: ordersLoading} = useCollectionQuery<Order>(
+      (restaurant?.id && customer?.uid) ? 'orders' : '',
+      [{field: 'customerUid', operator: '==', value: customer?.uid}, {field: 'restaurantId', operator: '==', value: restaurant?.id}]
   );
   
-  const lastOrderForRestaurant = orders
-      ?.filter(o => o.restaurantId === restaurant?.id)
-      .sort((a,b) => b.timestamp.toMillis() - a.timestamp.toMillis())[0];
+  const hasOrders = customerOrders && customerOrders.length > 0;
 
   const { cartItems, cartTotal, removeFromCart, updateQuantity, clearCart, itemCount } = useCart();
   const { toast } = useToast();
@@ -104,7 +101,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
         
         setIsCartOpen(false); // Close the sheet
         clearCart();
-        router.push(`/${restaurantCode}/order/${docRef.id}`);
+        router.push(`/${restaurantCode}/confirmation`);
 
     } catch (error) {
         console.error("Error placing order: ", error);
@@ -132,10 +129,11 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen bg-background pb-24">
         <header className="bg-card border-b sticky top-0 z-40">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <Home className="h-6 w-6 text-primary" />
+            <Link href={`/${restaurantCode}`} className="flex items-center gap-2">
+              <UtensilsCrossed className="h-6 w-6 text-primary" />
               <h1 className="text-xl font-bold font-headline">{restaurant.name}</h1>
             </Link>
+             {customer && <p className="text-sm text-muted-foreground hidden sm:block">Bem-vindo, {customer.displayName || customer.email}</p>}
           </div>
         </header>
 
@@ -163,7 +161,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
                 </button>
               </SheetTrigger>
 
-              <Link href={lastOrderForRestaurant ? `/${restaurantCode}/order/${lastOrderForRestaurant.id}` : '#'} onClick={(e) => !lastOrderForRestaurant && e.preventDefault()} className={`flex flex-col items-center justify-center gap-1 text-muted-foreground ${pathname.includes('/order/') ? 'text-primary' : ''} ${!lastOrderForRestaurant ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <Link href={hasOrders ? `/${restaurantCode}/orders` : '#'} onClick={(e) => !hasOrders && e.preventDefault()} className={`flex flex-col items-center justify-center gap-1 text-muted-foreground ${pathname.includes('/orders') ? 'text-primary' : ''} ${!hasOrders ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <ClipboardList className="h-6 w-6" />
                   <span className="text-xs font-medium">Pedidos</span>
               </Link>

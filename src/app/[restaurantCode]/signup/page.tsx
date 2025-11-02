@@ -35,7 +35,7 @@ export default function CustomerSignUpPage() {
   const auth = useAuth();
   const firestore = useFirestore();
 
-  const {data: restaurants, loading} = useCollectionQuery<Restaurant>('restaurants', 'code', restaurantCode);
+  const {data: restaurants, loading} = useCollectionQuery<Restaurant>('restaurants', [{field: 'code', operator: '==', value: restaurantCode}]);
   const restaurant = restaurants?.[0];
 
   useEffect(() => {

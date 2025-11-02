@@ -12,7 +12,7 @@ export default function MenuPage() {
   const params = useParams();
   const restaurantCode = params.restaurantCode as string;
   
-  const {data: restaurants, loading: restaurantLoading} = useCollectionQuery<Restaurant>('restaurants', 'code', restaurantCode);
+  const {data: restaurants, loading: restaurantLoading} = useCollectionQuery<Restaurant>('restaurants', [{field: 'code', operator: '==', value: restaurantCode}]);
   const restaurant = restaurants?.[0];
 
   const {data: menuItems, loading: menuLoading} = useCollection<MenuItem>(

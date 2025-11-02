@@ -10,6 +10,7 @@ import {
   type Firestore,
   type DocumentData,
   type Query,
+  WhereFilterOp,
 } from 'firebase/firestore';
 
 import {useFirestore} from '@/firebase';
@@ -23,6 +24,7 @@ export function useCollection<T>(collectionName: string) {
 
   useEffect(() => {
     if (!collectionName) {
+      setData([]);
       setLoading(false);
       return;
     }
@@ -51,22 +53,38 @@ export function useCollection<T>(collectionName: string) {
   return {data, loading};
 }
 
+interface QueryConstraint {
+    field: string;
+    operator: WhereFilterOp;
+    value: any;
+}
+
+
 export function useCollectionQuery<T>(
   collectionName: string,
-  field: string,
-  value: string
+  constraints: QueryConstraint[]
 ) {
   const firestore = useFirestore();
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Serialize constraints to create a stable dependency for useEffect
+  const constraintsJSON = JSON.stringify(constraints);
+
   useEffect(() => {
-    if (!collectionName || !field || !value) {
+    // Basic validation: if collectionName is falsy, or no valid constraints, do nothing.
+    if (!collectionName || !constraints || constraints.some(c => !c.value)) {
+        setData([]);
         setLoading(false);
         return;
     }
+
+    const deserializedConstraints = JSON.parse(constraintsJSON) as QueryConstraint[];
+
     const collectionRef = collection(firestore, collectionName);
-    const q = query(collectionRef, where(field, '==', value));
+    const whereClauses = deserializedConstraints.map(c => where(c.field, c.operator, c.value));
+    
+    const q = query(collectionRef, ...whereClauses);
 
     const unsubscribe = onSnapshot(
       q,
@@ -86,7 +104,7 @@ export function useCollectionQuery<T>(
     );
 
     return () => unsubscribe();
-  }, [firestore, collectionName, field, value]);
+  }, [firestore, collectionName, constraintsJSON]);
 
   return {data, loading};
 }

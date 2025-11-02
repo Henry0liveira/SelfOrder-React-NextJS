@@ -40,7 +40,7 @@ export default function CustomerPortal() {
         if (!querySnapshot.empty) {
             const restaurantDoc = querySnapshot.docs[0];
             const restaurant = { id: restaurantDoc.id, ...restaurantDoc.data() } as Restaurant;
-            router.push(`/${restaurant.code}/login`);
+            router.push(`/${restaurant.code}`);
         } else {
             toast({
               title: 'Restaurante não encontrado',
