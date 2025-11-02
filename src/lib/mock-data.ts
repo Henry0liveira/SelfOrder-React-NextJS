@@ -8,8 +8,7 @@ export const restaurantData: Restaurant[] = [
     id: '1',
     name: 'The Coral Cafe',
     code: 'CORAL123',
-    email: 'staff@coral.cafe',
-    password: 'password', // Added for login purposes
+    ownerUid: 'owner-coral-cafe', // Placeholder UID
     menu: [
       { id: 'm1', name: 'Gourmet Burger', description: 'Juicy beef patty, cheddar, and special sauce.', price: 12.99, category: 'Main Courses', imageUrl: images.find(i => i.id === 'burger_1')?.imageUrl!, imageHint: 'gourmet burger' },
       { id: 'm2', name: 'Pepperoni Pizza', description: 'Classic pizza with spicy pepperoni.', price: 15.50, category: 'Main Courses', imageUrl: images.find(i => i.id === 'pizza_1')?.imageUrl!, imageHint: 'pepperoni pizza' },
@@ -39,6 +38,7 @@ export const generateOrdersData = (restaurant: Restaurant = restaurantData[0]): 
     orders.push({
       id: `ORD${1001 + i}`,
       restaurantId: restaurant.id,
+      customerUid: `customer-${i}`,
       items,
       total,
       status: statuses[i % statuses.length],
@@ -49,7 +49,8 @@ export const generateOrdersData = (restaurant: Restaurant = restaurantData[0]): 
 };
 
 export const findRestaurantByCode = (code: string): Restaurant | undefined => {
-  const storedRestaurants = localStorage.getItem('restaurants');
-  const allRestaurants = storedRestaurants ? JSON.parse(storedRestaurants) : restaurantData;
+  // This function is now illustrative, as data will be fetched from Firestore.
+  // In a real component, you would use a Firestore query.
+  const allRestaurants: Restaurant[] = restaurantData;
   return allRestaurants.find((r: Restaurant) => r.code.toUpperCase() === code.toUpperCase());
 };
