@@ -99,7 +99,8 @@
     }
   },
   "auth": {
-    "providers": ["password"]
+    "providers": ["password"],
+    "description": "Enable email and password authentication for users."
   },
   "firestore": {
     "/restaurants/{restaurantId}": {
