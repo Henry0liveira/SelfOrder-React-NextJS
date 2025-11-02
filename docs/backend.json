@@ -89,6 +89,14 @@
             "type": "string",
             "description": "The UID of the customer who placed the order."
         },
+        "customer": {
+            "type": "object",
+            "description": "Denormalized customer data for quick display.",
+            "properties": {
+                "name": {"type": "string"},
+                "email": {"type": "string", "format": "email"}
+            }
+        },
         "items": {
           "type": "array",
           "items": {

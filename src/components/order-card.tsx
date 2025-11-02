@@ -5,7 +5,7 @@ import type { Order, OrderStatus } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ChefHat, CheckCircle, Loader2 } from 'lucide-react';
+import { ChefHat, CheckCircle, Loader2, User } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
 interface OrderCardProps {
@@ -29,8 +29,14 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div>
             <CardTitle className="text-lg font-bold">Pedido #{order.id.substring(0, 6)}</CardTitle>
-            <CardDescription>
-                {getTimestamp()}
+            <CardDescription className="flex items-center gap-2">
+                <span>{getTimestamp()}</span>
+                {order.customer?.name && (
+                    <>
+                        <Separator orientation="vertical" className="h-4" />
+                        <span className="flex items-center gap-1.5"><User className="h-4 w-4"/> {order.customer.name}</span>
+                    </>
+                )}
             </CardDescription>
         </div>
         <div className="text-right">

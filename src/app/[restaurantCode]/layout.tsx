@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Home, ShoppingCart, ClipboardList, Loader2, UtensilsCrossed } from 'lucide-react';
+import { Home, ShoppingCart, ClipboardList, Loader2, UtensilsCrossed, User } from 'lucide-react';
 import { CartProvider, useCart } from '@/hooks/use-cart';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
@@ -46,8 +46,8 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
   const {data: customerOrders, loading: ordersLoading} = useCollectionQuery<Order>(
       (restaurant?.id && customer?.uid) ? 'orders' : '',
       [
-        {field: 'customerUid', operator: '==', value: customer?.uid}, 
-        {field: 'restaurantId', operator: '==', value: restaurant?.id}
+        {field: 'customerUid', operator: '==', value: customer?.uid || ''}, 
+        {field: 'restaurantId', operator: '==', value: restaurant?.id || ''}
       ]
   );
   
@@ -75,7 +75,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const newOrder = {
+    const newOrder: Omit<Order, 'id'> = {
       restaurantId: restaurant.id,
       customerUid: customer.uid,
       customer: {
@@ -138,7 +138,14 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
               <UtensilsCrossed className="h-6 w-6 text-primary" />
               <h1 className="text-xl font-bold font-headline">{restaurant.name}</h1>
             </Link>
-             {customer && <p className="text-sm text-muted-foreground hidden sm:block">Bem-vindo, {customer.displayName || customer.email}</p>}
+             {customer && (
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground"/>
+                <p className="text-sm text-muted-foreground hidden sm:block">
+                  {customer.displayName || customer.email}
+                </p>
+              </div>
+             )}
           </div>
         </header>
 
