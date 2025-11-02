@@ -20,8 +20,9 @@ export default function ManageMenuPage() {
     user?.uid || ''
   );
   
+  // Conditionally fetch menu items only when user.uid is available
   const { data: menuItems, loading: menuLoading } = useCollection<MenuItem>(
-      user ? `restaurants/${user.uid}/menu` : ''
+      user?.uid ? `restaurants/${user.uid}/menu` : ''
   );
 
   const loading = userLoading || restaurantLoading || menuLoading;
@@ -98,7 +99,7 @@ export default function ManageMenuPage() {
                 </Button>
             </div>
 
-            {menuItems.length === 0 ? (
+            {menuItems && menuItems.length === 0 ? (
                 <Card className="text-center py-16">
                     <CardHeader>
                         <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit">
@@ -116,14 +117,14 @@ export default function ManageMenuPage() {
                     </CardContent>
                 </Card>
             ) : (
-                 Object.entries(menuByCategory!).sort(([catA], [catB]) => catA.localeCompare(catB)).map(([category, items]) => (
+                 menuByCategory && Object.entries(menuByCategory).sort(([catA], [catB]) => catA.localeCompare(catB)).map(([category, items]) => (
                     <div key={category} className="mb-12">
                         <h3 className="text-2xl font-bold font-headline mb-4 border-b-2 border-primary pb-2">{category}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {items.map(item => (
                                 <Card key={item.id} className="overflow-hidden flex flex-col">
                                     <div className="relative h-40 w-full">
-                                        <Image src={item.imageUrl} alt={item.name} layout="fill" objectFit="cover" data-ai-hint={item.imageHint} />
+                                        <Image src={item.imageUrl} alt={item.name} fill objectFit="cover" data-ai-hint={item.imageHint} />
                                     </div>
                                     <CardHeader>
                                         <CardTitle>{item.name}</CardTitle>
