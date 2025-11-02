@@ -1,85 +1,72 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ChefHat, ShoppingBasket, CheckCircle, UtensilsCrossed, LogOut, Loader2, ArrowLeft } from 'lucide-react';
+import { ChefHat, ShoppingBasket, CheckCircle, LogOut, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { generateOrdersData } from '@/lib/mock-data';
-import type { Order, OrderStatus } from '@/types';
+import type { Order, OrderStatus, Restaurant } from '@/types';
 import { OrderCard } from '@/components/order-card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useUser, useAuth, useCollectionQuery, useDoc } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 export default function StaffOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    // Ensure this code runs only on the client
-    setIsClient(true);
-    
-    // In a real app, this would be a real-time subscription.
-    // We'll use localStorage for this demo and poll for changes.
-    const loadOrders = () => {
-      const loggedInRestaurant = localStorage.getItem('loggedInRestaurant');
-      if (!loggedInRestaurant) {
-          router.push('/staff/login');
-          return;
-      }
-      const restaurantId = JSON.parse(loggedInRestaurant).id;
-
-      const storedOrders = localStorage.getItem('orders');
-      if (storedOrders) {
-        const parsedOrders: Order[] = JSON.parse(storedOrders).map((o: any) => ({
-          ...o,
-          timestamp: new Date(o.timestamp), // Ensure timestamp is a Date object
-        }));
-        // Filter orders for the logged-in restaurant
-        setOrders(parsedOrders.filter(o => o.restaurantId === restaurantId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-      } else {
-        // If no orders in localStorage, we can assume there are none for this restaurant yet
-        setOrders([]);
-      }
-    }
-    
-    loadOrders();
-
-    const interval = setInterval(loadOrders, 2000); // Check for new orders every 2 seconds
-    return () => clearInterval(interval);
-
-  }, [router]);
-
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    const allOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]').map((o:any) => ({...o, timestamp: new Date(o.timestamp)}));
-    const updatedAllOrders = allOrders.map(order =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    );
-    
-    localStorage.setItem('orders', JSON.stringify(updatedAllOrders));
-    
-    // Update local state to reflect change immediately
-    const loggedInRestaurantId = JSON.parse(localStorage.getItem('loggedInRestaurant')!).id;
-    setOrders(updatedAllOrders.filter(o => o.restaurantId === loggedInRestaurantId).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-  };
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { user, loading: userLoading } = useUser();
   
-  const handleLogout = () => {
-    localStorage.removeItem('loggedInRestaurant');
+  const { data: restaurant, loading: restaurantLoading } = useDoc<Restaurant>(
+    'restaurants',
+    user?.uid || ''
+  );
+
+  const { data: orders, loading: ordersLoading } = useCollectionQuery<Order>(
+    'orders',
+    'restaurantId',
+    restaurant?.id || ''
+  );
+
+  const loading = userLoading || restaurantLoading || ordersLoading;
+
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    if (!orderId) return;
+    const orderDocRef = doc(firestore, 'orders', orderId);
+    try {
+      await updateDoc(orderDocRef, { status: newStatus });
+    } catch (error) {
+      console.error("Error updating order status: ", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    await auth.signOut();
     router.push('/staff/login');
   };
+  
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push('/staff/login');
+    }
+  }, [user, userLoading, router]);
 
   const renderOrderList = (status: OrderStatus) => {
-    if (!isClient) {
+    if (loading) {
       return (
         <div className="text-center text-muted-foreground py-16">
           <Loader2 className="w-12 h-12 animate-spin mx-auto" />
-          <p>Loading orders...</p>
+          <p>Carregando pedidos...</p>
         </div>
-      )
+      );
     }
 
-    const filteredOrders = orders.filter(order => order.status === status);
+    const filteredOrders = orders
+        .filter(order => order.status === status)
+        .sort((a,b) => b.timestamp.toMillis() - a.timestamp.toMillis());
     
     if (filteredOrders.length === 0) {
       return (
@@ -90,22 +77,22 @@ export default function StaffOrdersPage() {
               {status === 'ready' && <ChefHat className="w-12 h-12" />}
               {status === 'completed' && <CheckCircle className="w-12 h-12" />}
             </div>
-            <p>No {status} orders right now.</p>
+            <p>Nenhum pedido {status} agora.</p>
         </div>
       );
     }
     
     return (
       <div className="space-y-4">
-        {filteredOrders.map((order, index) => (
-          <OrderCard key={`${order.id}-${index}`} order={order} onStatusChange={handleStatusChange} />
+        {filteredOrders.map((order) => (
+          <OrderCard key={order.id} order={order} onStatusChange={handleStatusChange} />
         ))}
       </div>
     );
   };
   
   const getCount = (status: OrderStatus) => {
-    if (!isClient) return 0;
+    if (loading || !orders) return 0;
     return orders.filter(o => o.status === status).length;
   }
 
@@ -116,7 +103,7 @@ export default function StaffOrdersPage() {
             <div className="flex items-center justify-between h-16">
                 <Button variant="ghost" size="sm" asChild>
                     <Link href="/staff/dashboard">
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Painel
                     </Link>
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
@@ -128,8 +115,8 @@ export default function StaffOrdersPage() {
 
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="mb-6">
-            <h1 className="text-3xl font-bold font-headline">Incoming Orders</h1>
-            <p className="text-muted-foreground">Manage and track customer orders in real-time.</p>
+            <h1 className="text-3xl font-bold font-headline">Pedidos Recebidos</h1>
+            <p className="text-muted-foreground">Gerencie e acompanhe os pedidos dos clientes em tempo real.</p>
         </div>
 
         <Card>
@@ -137,16 +124,16 @@ export default function StaffOrdersPage() {
             <Tabs defaultValue="new" className="w-full">
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto p-1.5 rounded-none rounded-t-lg">
                 <TabsTrigger value="new" className="py-2.5">
-                  <ShoppingBasket className="mr-2 h-4 w-4" /> New ({getCount('new')})
+                  <ShoppingBasket className="mr-2 h-4 w-4" /> Novo ({getCount('new')})
                 </TabsTrigger>
                 <TabsTrigger value="in-progress" className="py-2.5">
-                  <Loader2 className="mr-2 h-4 w-4" /> In Progress ({getCount('in-progress')})
+                  <Loader2 className="mr-2 h-4 w-4" /> Em Progresso ({getCount('in-progress')})
                 </TabsTrigger>
                 <TabsTrigger value="ready" className="py-2.5">
-                  <ChefHat className="mr-2 h-4 w-4" /> Ready ({getCount('ready')})
+                  <ChefHat className="mr-2 h-4 w-4" /> Pronto ({getCount('ready')})
                 </TabsTrigger>
                 <TabsTrigger value="completed" className="py-2.5">
-                  <CheckCircle className="mr-2 h-4 w-4" /> Completed ({getCount('completed')})
+                  <CheckCircle className="mr-2 h-4 w-4" /> Concluído ({getCount('completed')})
                 </TabsTrigger>
               </TabsList>
 

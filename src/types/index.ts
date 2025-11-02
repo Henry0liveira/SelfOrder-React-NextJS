@@ -1,3 +1,6 @@
+
+import { Timestamp } from "firebase/firestore";
+
 export type MenuItem = {
   id: string; // Firestore document ID
   name: string;
@@ -18,8 +21,10 @@ export type Restaurant = {
 export type OrderStatus = 'new' | 'in-progress' | 'ready' | 'completed';
 
 export type CartItem = {
-  menuItem: MenuItem;
+  menuItemId: string; // The ID of the menu item
+  name: string;
   quantity: number;
+  price: number;
 };
 
 export type CustomerAccount = {
@@ -36,7 +41,7 @@ export type Order = {
   items: CartItem[];
   total: number;
   status: OrderStatus;
-  timestamp: any; // Firestore Timestamp
+  timestamp: Timestamp; // Firestore Timestamp
   customerUid: string; // The UID of the customer who placed the order
   customer?: { // Optional: denormalized customer data for quick display
     name: string;

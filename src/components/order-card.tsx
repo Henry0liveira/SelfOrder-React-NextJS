@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Order, OrderStatus } from '@/types';
@@ -5,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ChefHat, CheckCircle, Loader2 } from 'lucide-react';
+import { Timestamp } from 'firebase/firestore';
 
 interface OrderCardProps {
   order: Order;
@@ -12,13 +14,23 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order, onStatusChange }: OrderCardProps) {
+    const getTimestamp = () => {
+        if (!order.timestamp) return 'No time';
+        if (order.timestamp instanceof Timestamp) {
+            return order.timestamp.toDate().toLocaleTimeString();
+        }
+        // Fallback for cases where it might be a string or number from older data
+        return new Date(order.timestamp).toLocaleTimeString();
+    }
+
+
   return (
     <Card className="transition-all hover:shadow-md">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div>
-            <CardTitle className="text-lg font-bold">Order #{order.id}</CardTitle>
+            <CardTitle className="text-lg font-bold">Pedido #{order.id.substring(0, 6)}</CardTitle>
             <CardDescription>
-                {new Date(order.timestamp).toLocaleTimeString()}
+                {getTimestamp()}
             </CardDescription>
         </div>
         <div className="text-right">
@@ -29,9 +41,9 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
         <Separator className="my-4" />
         <ul className="space-y-2 text-sm">
           {order.items.map((item, index) => (
-            <li key={`${item.menuItem.id}-${index}`} className="flex justify-between">
-              <span>{item.quantity}x {item.menuItem.name}</span>
-              <span className="font-mono">${(item.menuItem.price * item.quantity).toFixed(2)}</span>
+            <li key={`${item.menuItemId}-${index}`} className="flex justify-between">
+              <span>{item.quantity}x {item.name}</span>
+              <span className="font-mono">${(item.price * item.quantity).toFixed(2)}</span>
             </li>
           ))}
         </ul>
@@ -39,17 +51,17 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
         <div className="flex flex-wrap gap-2 justify-end">
           {order.status === 'new' && (
             <Button onClick={() => onStatusChange(order.id, 'in-progress')}>
-              <Loader2 className="mr-2 h-4 w-4" /> Start Cooking
+              <Loader2 className="mr-2 h-4 w-4" /> Iniciar Preparo
             </Button>
           )}
           {order.status === 'in-progress' && (
             <Button onClick={() => onStatusChange(order.id, 'ready')} variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">
-              <ChefHat className="mr-2 h-4 w-4" /> Mark as Ready
+              <ChefHat className="mr-2 h-4 w-4" /> Marcar como Pronto
             </Button>
           )}
           {order.status === 'ready' && (
             <Button onClick={() => onStatusChange(order.id, 'completed')} className="bg-accent text-accent-foreground hover:bg-accent/90">
-              <CheckCircle className="mr-2 h-4 w-4" /> Complete Order
+              <CheckCircle className="mr-2 h-4 w-4" /> Concluir Pedido
             </Button>
           )}
         </div>
