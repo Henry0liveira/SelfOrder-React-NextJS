@@ -43,6 +43,7 @@ export function useCollection<T>(collectionName: string) {
           operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
+        setData([]);
         setLoading(false);
       }
     );
@@ -72,13 +73,14 @@ export function useCollectionQuery<T>(
   const constraintsJSON = JSON.stringify(constraints);
 
   useEffect(() => {
-    const deserializedConstraints = JSON.parse(constraintsJSON) as QueryConstraint | QueryConstraint[];
     
-    // Ensure constraints is an array
-    const constraintsArray = Array.isArray(deserializedConstraints) ? deserializedConstraints : [deserializedConstraints];
+    // Always work with an array
+    const constraintsArray = Array.isArray(JSON.parse(constraintsJSON))
+      ? (JSON.parse(constraintsJSON) as QueryConstraint[])
+      : [JSON.parse(constraintsJSON) as QueryConstraint];
 
     // Basic validation: if collectionName is falsy, or no valid constraints, do nothing.
-    if (!collectionName || !constraintsArray || constraintsArray.length === 0 || constraintsArray.some(c => c.value === undefined || c.value === null || c.value === '')) {
+    if (!collectionName || constraintsArray.length === 0 || constraintsArray.some(c => c.value === undefined || c.value === null || c.value === '')) {
         setData([]);
         setLoading(false);
         return;
@@ -86,7 +88,6 @@ export function useCollectionQuery<T>(
 
     const collectionRef = collection(firestore, collectionName);
     
-    // Filter out invalid where clauses
     const validWhereClauses = constraintsArray
         .filter(c => c.field && c.operator && c.value !== undefined)
         .map(c => where(c.field, c.operator, c.value));
@@ -102,7 +103,7 @@ export function useCollectionQuery<T>(
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        setData(snapshot.docs.map((doc) => ({...doc.data(), id: doc.id})) as T[]);
+        setData(snapshot.docs.map((doc) => ({...(doc.data() as T), id: doc.id})));
         setLoading(false);
       },
       (error) => {
@@ -112,12 +113,12 @@ export function useCollectionQuery<T>(
           operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
+        setData([]);
         setLoading(false);
       }
     );
 
     return () => unsubscribe();
-  // Using constraintsJSON ensures the effect only re-runs when the query truly changes.
   }, [firestore, collectionName, constraintsJSON]);
 
   return {data, loading};

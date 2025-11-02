@@ -18,7 +18,8 @@ export function useDoc<T>(collectionName: string, docId: string) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!docId) {
+    if (!docId || !collectionName) {
+      setData(null);
       setLoading(false);
       return;
     }
@@ -28,7 +29,11 @@ export function useDoc<T>(collectionName: string, docId: string) {
     const unsubscribe = onSnapshot(
       docRef,
       (snapshot) => {
-        setData(snapshot.data() as T);
+        if (snapshot.exists()) {
+          setData({...(snapshot.data() as T), id: snapshot.id});
+        } else {
+          setData(null);
+        }
         setLoading(false);
       },
       (error) => {
@@ -38,6 +43,7 @@ export function useDoc<T>(collectionName: string, docId: string) {
           operation: 'get',
         });
         errorEmitter.emit('permission-error', permissionError);
+        setData(null);
         setLoading(false);
       }
     );
