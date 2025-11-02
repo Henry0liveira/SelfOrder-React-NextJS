@@ -112,6 +112,14 @@
         "timestamp": {
             "type": "string",
             "format": "date-time"
+        },
+        "rating": {
+            "type": "number",
+            "description": "Customer rating for the order, from 1 to 5."
+        },
+        "review": {
+            "type": "string",
+            "description": "A text review from the customer for the order."
         }
       },
       "required": ["restaurantId", "customerUid", "items", "total", "status", "timestamp"]

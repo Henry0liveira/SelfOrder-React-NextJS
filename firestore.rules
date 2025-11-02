@@ -47,8 +47,18 @@ service cloud.firestore {
         // Users can read their own orders. Restaurant owners can read orders for their restaurant.
         allow get: if request.auth != null && (request.auth.uid == resource.data.customerUid || get(/databases/$(database)/documents/restaurants/$(resource.data.restaurantId)).data.ownerUid == request.auth.uid);
         
-        // Customers can't update orders. Restaurant owners can update the status.
-        allow update: if request.auth != null && get(/databases/$(database)/documents/restaurants/$(resource.data.restaurantId)).data.ownerUid == request.auth.uid;
+        // Update permission logic
+        allow update: if request.auth != null && (
+            // Case 1: Restaurant owner updating status
+            (get(/databases/$(database)/documents/restaurants/$(resource.data.restaurantId)).data.ownerUid == request.auth.uid &&
+             request.resource.data.status != resource.data.status && // only status can be changed by owner
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
+            // Case 2: Customer submitting a review for a completed order
+            (request.auth.uid == resource.data.customerUid &&
+             resource.data.status == 'completed' &&
+             request.resource.data.rating != null &&
+             request.resource.data.diff(resource.data).affectedKeys().hasAll(['rating', 'review']))
+        );
         
         // Logged-in users can see a list of their own orders.
         // Restaurant owners can see all orders for their restaurant.
