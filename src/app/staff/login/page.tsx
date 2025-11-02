@@ -1,8 +1,9 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { LogIn, UtensilsCrossed, PlusCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,8 +18,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
-import { restaurantData } from '@/lib/mock-data';
-import type { Restaurant } from '@/types';
+import { useAuth } from '@/firebase';
+
 
 export default function StaffLoginPage() {
   const [email, setEmail] = useState('staff@coral.cafe');
@@ -26,46 +27,28 @@ export default function StaffLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
 
-  useEffect(() => {
-    // Prime localStorage with mock data if it's not already there.
-    // This ensures the demo login always works on first load.
-    if (!localStorage.getItem('restaurants')) {
-      localStorage.setItem('restaurants', JSON.stringify(restaurantData));
-    }
-  }, []);
-
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-      const storedRestaurants = localStorage.getItem('restaurants');
-      // The list will be either the initial mock data or the updated list with new restaurants.
-      const allRestaurants: Restaurant[] = storedRestaurants ? JSON.parse(storedRestaurants) : [];
-
-      const restaurant = allRestaurants.find(
-        (r) => r.email.toLowerCase() === email.toLowerCase() && r.password === password
-      );
-      
-      if (restaurant) {
-        localStorage.setItem('loggedInRestaurant', JSON.stringify(restaurant));
-        
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
         toast({
-          title: 'Login Successful',
-          description: "Welcome back! Redirecting to your dashboard...",
+            title: 'Login bem-sucedido!',
+            description: "Bem-vindo de volta! Redirecionando para o seu painel...",
         });
         router.push('/staff/dashboard');
-      } else {
+    } catch (error: any) {
         toast({
-          title: 'Login Failed',
-          description: 'Invalid credentials. Please try again.',
-          variant: 'destructive',
+            title: 'Falha no Login',
+            description: 'Credenciais inválidas. Por favor, tente novamente.',
+            variant: 'destructive',
         });
+    } finally {
         setIsLoading(false);
-      }
-    }, 1000);
+    }
   };
 
   return (
@@ -77,8 +60,8 @@ export default function StaffLoginPage() {
                 <UtensilsCrossed className="h-8 w-8 text-primary-foreground" />
             </div>
           </Link>
-          <CardTitle className="text-3xl font-headline">Staff Portal</CardTitle>
-          <CardDescription>Log in to manage your restaurant</CardDescription>
+          <CardTitle className="text-3xl font-headline">Portal da Equipe</CardTitle>
+          <CardDescription>Faça login para gerenciar seu restaurante</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
@@ -95,7 +78,7 @@ export default function StaffLoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -106,7 +89,7 @@ export default function StaffLoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-              {isLoading ? 'Logging In...' : 'Log In'}
+              {isLoading ? 'Fazendo Login...' : 'Login'}
               {!isLoading && <LogIn className="ml-2 h-4 w-4" />}
             </Button>
           </form>
@@ -131,7 +114,7 @@ export default function StaffLoginPage() {
           </Button>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Use email <code className="font-bold bg-muted p-1 rounded">staff@coral.cafe</code> and password <code className="font-bold bg-muted p-1 rounded">password</code> for demo.
+            Use e-mail <code className="font-bold bg-muted p-1 rounded">staff@coral.cafe</code> e senha <code className="font-bold bg-muted p-1 rounded">password</code> para demonstração.
           </p>
         </CardContent>
       </Card>

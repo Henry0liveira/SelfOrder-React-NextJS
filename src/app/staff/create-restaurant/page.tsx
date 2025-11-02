@@ -3,6 +3,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ArrowLeft, PlusCircle, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,8 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { restaurantData } from '@/lib/mock-data';
-import type { Restaurant } from '@/types';
+import { useAuth, useFirestore } from '@/firebase';
 
 export default function CreateRestaurantPage() {
   const [restaurantName, setRestaurantName] = useState('');
@@ -26,50 +27,61 @@ export default function CreateRestaurantPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const firestore = useFirestore();
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-      // Always read the latest from localStorage first
-      const storedRestaurants = localStorage.getItem('restaurants');
-      // Initialize with mock data if no restaurants are in localStorage, otherwise parse what's there
-      const allRestaurants: Restaurant[] = storedRestaurants ? JSON.parse(storedRestaurants) : restaurantData;
-
-      // Check if email already exists in the current list of restaurants
-      const emailExists = allRestaurants.some((r) => r.email.toLowerCase() === email.toLowerCase());
-      if (emailExists) {
+    if (!restaurantName || !email || !password) {
         toast({
-          title: 'Error',
-          description: 'An account with this email already exists.',
-          variant: 'destructive',
+            title: "Erro de Validação",
+            description: "Por favor, preencha todos os campos.",
+            variant: "destructive",
         });
         setIsLoading(false);
         return;
-      }
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
       
       const newRestaurantCode = `${restaurantName.substring(0, 4).toUpperCase().replace(/\s/g, '')}${Math.floor(100 + Math.random() * 900)}`;
 
-      const newRestaurant: Restaurant = {
-        id: `REST${allRestaurants.length + 1}`,
+      // Create a restaurant document in Firestore
+      const restaurantDocRef = doc(firestore, 'restaurants', user.uid);
+      await setDoc(restaurantDocRef, {
         name: restaurantName,
         code: newRestaurantCode,
-        email: email,
-        password: password, // In a real app, this should be hashed!
-        menu: [], // Start with an empty menu
-      };
+        ownerUid: user.uid,
+      });
 
-      const updatedRestaurants = [...allRestaurants, newRestaurant];
-      localStorage.setItem('restaurants', JSON.stringify(updatedRestaurants));
+       // Create a user profile document
+      const userDocRef = doc(firestore, "users", user.uid);
+      await setDoc(userDocRef, {
+        name: restaurantName, // Restaurant owner's name is the restaurant name by default
+        email: user.email,
+      });
 
       toast({
-        title: 'Restaurant Created!',
-        description: `Restaurant "${restaurantName}" is now ready. Your code is ${newRestaurantCode}.`,
+        title: 'Restaurante Criado!',
+        description: `O restaurante "${restaurantName}" está pronto.`,
       });
       
-      router.push('/staff/login'); 
-    }, 1500);
+      router.push('/staff/login');
+
+    } catch (error: any) {
+      console.error("Erro ao criar restaurante:", error);
+      toast({
+        title: 'Erro ao Criar Conta',
+        description: error.message || 'Ocorreu um erro desconhecido.',
+        variant: 'destructive',
+      });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -81,17 +93,17 @@ export default function CreateRestaurantPage() {
                     <UtensilsCrossed className="h-8 w-8 text-primary-foreground" />
                 </div>
             </Link>
-          <CardTitle className="text-3xl font-headline">Create a New Restaurant</CardTitle>
-          <CardDescription>Fill in the details to get started.</CardDescription>
+          <CardTitle className="text-3xl font-headline">Crie um Novo Restaurante</CardTitle>
+          <CardDescription>Preencha os detalhes para começar.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCreate} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="restaurantName">Restaurant Name</Label>
+              <Label htmlFor="restaurantName">Nome do Restaurante</Label>
               <Input
                 id="restaurantName"
                 type="text"
-                placeholder="e.g., The Tasty Spoon"
+                placeholder="Ex: The Tasty Spoon"
                 value={restaurantName}
                 onChange={(e) => setRestaurantName(e.target.value)}
                 required
@@ -99,11 +111,11 @@ export default function CreateRestaurantPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Login Email</Label>
+              <Label htmlFor="email">E-mail de Login</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="e.g., staff@yourrestaurant.com"
+                placeholder="Ex: staff@yourrestaurant.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -111,11 +123,11 @@ export default function CreateRestaurantPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Create a secure password"
+                placeholder="Crie uma senha segura"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -123,7 +135,7 @@ export default function CreateRestaurantPage() {
               />
             </div>
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create Restaurant'}
+              {isLoading ? 'Criando...' : 'Criar Restaurante'}
               {!isLoading && <PlusCircle className="ml-2 h-4 w-4" />}
             </Button>
           </form>
@@ -131,7 +143,7 @@ export default function CreateRestaurantPage() {
           <Button variant="link" className="w-full mt-4" asChild>
             <Link href="/staff/login">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Login
+              Voltar ao Login
             </Link>
           </Button>
         </CardContent>
