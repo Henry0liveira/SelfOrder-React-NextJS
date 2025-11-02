@@ -1,37 +1,46 @@
+
 "use client";
 
-import { LogOut, UtensilsCrossed, ClipboardList, BookOpen, QrCode } from 'lucide-react';
+import { LogOut, UtensilsCrossed, ClipboardList, BookOpen, QrCode, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import type { Restaurant } from '@/types';
+import { signOut } from 'firebase/auth';
+import { useAuth } from '@/firebase';
 
-type RestaurantInfo = {
-  name: string;
-  code: string;
-}
 
 export default function StaffDashboardPage() {
   const router = useRouter();
+  const auth = useAuth();
   const { toast } = useToast();
-  const [restaurantInfo, setRestaurantInfo] = useState<RestaurantInfo | null>(null);
-
-  useEffect(() => {
-    // In a real app, you'd get this from a proper session
-    const loggedInRestaurant = localStorage.getItem('loggedInRestaurant');
-    if (!loggedInRestaurant) {
-      router.push('/staff/login');
-    } else {
-      const { name, code } = JSON.parse(loggedInRestaurant);
-      setRestaurantInfo({ name, code });
-    }
-  }, [router]);
+  const { user, loading: userLoading } = useUser();
   
-  const handleLogout = () => {
-    localStorage.removeItem('loggedInRestaurant');
+  const { data: restaurantInfo, loading: restaurantLoading } = useDoc<Restaurant>(
+    'restaurants',
+    user?.uid || ''
+  );
+
+  if (userLoading || restaurantLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-secondary/30">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    router.push('/staff/login');
+    return null;
+  }
+  
+  const handleLogout = async () => {
+    await signOut(auth);
     router.push('/staff/login');
   };
 
@@ -39,14 +48,26 @@ export default function StaffDashboardPage() {
     if (restaurantInfo?.code) {
       navigator.clipboard.writeText(restaurantInfo.code);
       toast({
-        title: "Code Copied!",
-        description: `Restaurant code "${restaurantInfo.code}" has been copied to your clipboard.`,
+        title: "Código Copiado!",
+        description: `O código do restaurante "${restaurantInfo.code}" foi copiado.`,
       });
     }
   };
 
   if (!restaurantInfo) {
-    return <div className="min-h-screen bg-secondary/30" />
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-secondary/30 p-4">
+            <Card className="text-center">
+                <CardHeader>
+                    <CardTitle>Restaurante não encontrado</CardTitle>
+                    <CardDescription>Não encontramos um restaurante associado à sua conta.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button onClick={handleLogout}>Fazer Login com Outra Conta</Button>
+                </CardContent>
+            </Card>
+        </div>
+    )
   }
 
   return (
@@ -67,7 +88,7 @@ export default function StaffDashboardPage() {
 
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold font-headline">Staff Dashboard</h1>
+            <h1 className="text-4xl font-bold font-headline">Painel da Equipe</h1>
             <p className="text-muted-foreground text-lg">Selecione uma opção para começar</p>
         </div>
 

@@ -10,12 +10,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import type { Restaurant, MenuItem } from '@/types';
+import type { MenuItem } from '@/types';
 import { Textarea } from '@/components/ui/textarea';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function AddMenuItemPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
   const [isLoading, setIsLoading] = useState(false);
   
   const [name, setName] = useState('');
@@ -24,45 +29,34 @@ export default function AddMenuItemPage() {
   const [category, setCategory] = useState('');
   const [imageUrl, setImageUrl] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    const loggedInRestaurantData = localStorage.getItem('loggedInRestaurant');
-    if (!loggedInRestaurantData) {
-      toast({ title: "Erro", description: "Sessão não encontrada. Por favor, faça login novamente.", variant: "destructive"});
+    
+    if (!user) {
+      toast({ title: "Erro", description: "Você precisa estar logado para adicionar um item.", variant: "destructive"});
       router.push('/staff/login');
       return;
     }
-    const loggedInRestaurant = JSON.parse(loggedInRestaurantData);
+    
+    if (!name || !price || !category || !imageUrl) {
+        toast({ title: "Campos obrigatórios", description: "Por favor, preencha todos os campos obrigatórios.", variant: "destructive"});
+        return;
+    }
 
-    const newItem: MenuItem = {
-        id: `item-${Date.now()}`,
-        name,
-        description,
-        price: parseFloat(price),
-        category,
-        imageUrl,
-        imageHint: name.toLowerCase(),
-    };
+    setIsLoading(true);
 
-    const allRestaurantsData = localStorage.getItem('restaurants');
-    let allRestaurants: Restaurant[] = allRestaurantsData ? JSON.parse(allRestaurantsData) : [];
-
-    // Find and update the specific restaurant's menu
-    const restaurantIndex = allRestaurants.findIndex(r => r.id === loggedInRestaurant.id);
-
-    if (restaurantIndex > -1) {
-        allRestaurants[restaurantIndex].menu.push(newItem);
+    try {
+        const menuCollectionRef = collection(firestore, 'restaurants', user.uid, 'menu');
         
-        // Save the updated list of all restaurants back to localStorage
-        localStorage.setItem('restaurants', JSON.stringify(allRestaurants));
-
-        // Also update the loggedInRestaurant item if it's stored separately and needs to be in sync
-        localStorage.setItem('loggedInRestaurant', JSON.stringify(allRestaurants[restaurantIndex]));
-        
-        // Trigger a storage event to notify other tabs/windows (like the menu page)
-        window.dispatchEvent(new Event('storage'));
+        await addDoc(menuCollectionRef, {
+            name,
+            description,
+            price: parseFloat(price),
+            category,
+            imageUrl,
+            imageHint: name.toLowerCase(),
+            createdAt: serverTimestamp()
+        });
 
         toast({
             title: "Item Adicionado!",
@@ -71,8 +65,9 @@ export default function AddMenuItemPage() {
         
         router.push('/staff/menu');
 
-    } else {
-        toast({ title: "Erro", description: "Não foi possível encontrar o restaurante para adicionar o item.", variant: "destructive"});
+    } catch (error) {
+        console.error("Erro ao adicionar item do cardápio: ", error);
+        toast({ title: "Erro", description: "Não foi possível adicionar o item ao cardápio.", variant: "destructive"});
         setIsLoading(false);
     }
   };
@@ -127,4 +122,3 @@ export default function AddMenuItemPage() {
     </div>
   );
 }
-

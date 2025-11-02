@@ -1,58 +1,67 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, BookOpen, Home, PlusCircle, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, BookOpen, Home, PlusCircle, UtensilsCrossed, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import type { Restaurant, MenuItem } from '@/types';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useUser, useDoc, useCollection } from '@/firebase';
 
 export default function ManageMenuPage() {
   const router = useRouter();
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const { user, loading: userLoading } = useUser();
+  
+  const { data: restaurant, loading: restaurantLoading } = useDoc<Restaurant>(
+    'restaurants',
+    user?.uid || ''
+  );
+  
+  const { data: menuItems, loading: menuLoading } = useCollection<MenuItem>(
+      user ? `restaurants/${user.uid}/menu` : ''
+  );
 
-  useEffect(() => {
-    const loggedInRestaurantData = localStorage.getItem('loggedInRestaurant');
-    if (!loggedInRestaurantData) {
-      router.push('/staff/login');
-      return;
+  const loading = userLoading || restaurantLoading || menuLoading;
+
+  const menuByCategory = menuItems?.reduce((acc, item) => {
+    const category = item.category || 'Uncategorized';
+    if (!acc[category]) {
+        acc[category] = [];
     }
-    const loggedInRestaurant = JSON.parse(loggedInRestaurantData);
-
-    const allRestaurantsData = localStorage.getItem('restaurants');
-    const allRestaurants = allRestaurantsData ? JSON.parse(allRestaurantsData) : [];
-    
-    const currentRestaurant = allRestaurants.find((r: Restaurant) => r.id === loggedInRestaurant.id);
-    setRestaurant(currentRestaurant || loggedInRestaurant);
-
-    // Listen for storage changes to update menu
-    const handleStorageChange = () => {
-        const updatedRestaurantsData = localStorage.getItem('restaurants');
-        const updatedRestaurants = updatedRestaurantsData ? JSON.parse(updatedRestaurantsData) : [];
-        const updatedCurrentRestaurant = updatedRestaurants.find((r: Restaurant) => r.id === loggedInRestaurant.id);
-        if(updatedCurrentRestaurant) {
-            setRestaurant(updatedCurrentRestaurant);
-        }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-
-  }, [router]);
-
-  const menuByCategory = restaurant?.menu.reduce((acc, item) => {
-    if (!acc[item.category]) {
-        acc[item.category] = [];
-    }
-    acc[item.category].push(item);
+    acc[category].push(item);
     return acc;
   }, {} as Record<string, MenuItem[]>);
 
+
+  if (loading) {
+    return <div className="min-h-screen bg-secondary/30 flex items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary"/></div>;
+  }
+
+  if (!user) {
+      router.push('/staff/login');
+      return null;
+  }
+
   if (!restaurant) {
-    return <div className="min-h-screen bg-secondary/30 flex items-center justify-center">Carregando...</div>;
+      // Handle case where user is logged in but has no restaurant document
+      return (
+          <div className="min-h-screen bg-secondary/30 flex items-center justify-center text-center">
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Restaurante não encontrado</CardTitle>
+                      <CardDescription>Não há um restaurante associado a esta conta.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <Button asChild>
+                          <Link href="/staff/dashboard">Voltar ao Painel</Link>
+                      </Button>
+                  </CardContent>
+              </Card>
+          </div>
+      )
   }
 
   return (
@@ -89,7 +98,7 @@ export default function ManageMenuPage() {
                 </Button>
             </div>
 
-            {restaurant.menu.length === 0 ? (
+            {menuItems.length === 0 ? (
                 <Card className="text-center py-16">
                     <CardHeader>
                         <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit">
@@ -107,7 +116,7 @@ export default function ManageMenuPage() {
                     </CardContent>
                 </Card>
             ) : (
-                 Object.entries(menuByCategory!).map(([category, items]) => (
+                 Object.entries(menuByCategory!).sort(([catA], [catB]) => catA.localeCompare(catB)).map(([category, items]) => (
                     <div key={category} className="mb-12">
                         <h3 className="text-2xl font-bold font-headline mb-4 border-b-2 border-primary pb-2">{category}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -136,4 +145,3 @@ export default function ManageMenuPage() {
     </div>
   );
 }
-
