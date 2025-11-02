@@ -1,0 +1,130 @@
+{
+  "entities": {
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "Represents a restaurant with its menu and details.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the restaurant."
+        },
+        "code": {
+          "type": "string",
+          "description": "A unique code for customers to access the menu."
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "The UID of the user who owns this restaurant."
+        }
+      },
+      "required": ["name", "code", "ownerUid"]
+    },
+    "MenuItem": {
+      "title": "Menu Item",
+      "description": "A single item on the restaurant's menu.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "category": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "imageHint": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "price", "category", "imageUrl"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer's order from a restaurant.",
+      "type": "object",
+      "properties": {
+        "restaurantId": {
+          "type": "string",
+          "description": "The ID of the restaurant where the order was placed."
+        },
+        "customerUid": {
+            "type": "string",
+            "description": "The UID of the customer who placed the order."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "menuItemId": {"type": "string"},
+              "name": {"type": "string"},
+              "quantity": {"type": "number"},
+              "price": {"type": "number"}
+            },
+            "required": ["menuItemId", "name", "quantity", "price"]
+          }
+        },
+        "total": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["new", "in-progress", "ready", "completed"]
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time"
+        }
+      },
+      "required": ["restaurantId", "customerUid", "items", "total", "status", "timestamp"]
+    },
+    "CustomerProfile": {
+      "title": "Customer Profile",
+      "description": "A customer's profile information.",
+      "type": "object",
+      "properties": {
+          "name": {"type": "string"},
+          "email": {"type": "string", "format": "email"}
+      },
+      "required": ["name", "email"]
+    }
+  },
+  "auth": {
+    "providers": ["password"]
+  },
+  "firestore": {
+    "/restaurants/{restaurantId}": {
+      "schema": {
+        "$ref": "#/entities/Restaurant"
+      },
+      "description": "Stores information about each restaurant."
+    },
+    "/restaurants/{restaurantId}/menu": {
+      "schema": {
+        "$ref": "#/entities/MenuItem"
+      },
+      "description": "A subcollection storing the menu items for a restaurant."
+    },
+    "/orders": {
+      "schema": {
+        "$ref": "#/entities/Order"
+      },
+      "description": "A top-level collection of all orders across all restaurants."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/CustomerProfile"
+      },
+      "description": "Stores public profile information for all users (customers and restaurant owners)."
+    }
+  }
+}

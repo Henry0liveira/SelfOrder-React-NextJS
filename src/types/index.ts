@@ -1,7 +1,5 @@
-
-
 export type MenuItem = {
-  id: string;
+  id: string; // Firestore document ID
   name: string;
   description: string;
   price: number;
@@ -11,12 +9,10 @@ export type MenuItem = {
 };
 
 export type Restaurant = {
-  id: string;
+  id: string; // Firestore document ID
   name:string;
   code: string;
-  email: string;
-  password?: string; // Should be hashed in a real app
-  menu: MenuItem[];
+  ownerUid: string; // UID of the Firebase user who owns this restaurant
 };
 
 export type OrderStatus = 'new' | 'in-progress' | 'ready' | 'completed';
@@ -27,19 +23,23 @@ export type CartItem = {
 };
 
 export type CustomerAccount = {
+  uid: string; // Corresponds to Firebase Auth UID
   name: string;
   email: string;
   phone?: string;
-  password?: string; // Should be hashed in a real app
   allowPromotions: boolean;
 };
 
 export type Order = {
-  id: string;
-  restaurantId: string;
+  id: string; // Firestore document ID
+  restaurantId: string; // The ID of the restaurant document
   items: CartItem[];
   total: number;
   status: OrderStatus;
-  timestamp: Date;
-  customer?: CustomerAccount;
+  timestamp: any; // Firestore Timestamp
+  customerUid: string; // The UID of the customer who placed the order
+  customer?: { // Optional: denormalized customer data for quick display
+    name: string;
+    email: string;
+  }
 };

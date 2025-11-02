@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { initializeFirebase, FirebaseClientProvider } from "@/firebase";
 
 export const metadata: Metadata = {
   title: "MenuQR",
@@ -13,6 +14,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { firebaseApp, auth, firestore } = initializeFirebase();
   return (
     <html lang="en" className="h-full">
       <head>
@@ -24,7 +26,13 @@ export default function RootLayout({
         />
       </head>
       <body className={cn("font-body antialiased h-full")}>
-        {children}
+        <FirebaseClientProvider
+          firebaseApp={firebaseApp}
+          auth={auth}
+          firestore={firestore}
+        >
+          {children}
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
