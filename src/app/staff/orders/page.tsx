@@ -10,7 +10,7 @@ import type { Order, OrderStatus, Restaurant } from '@/types';
 import { OrderCard } from '@/components/order-card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth, useCollectionQuery, useDoc } from '@/firebase';
+import { useUser, useAuth, useCollectionQuery } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 
@@ -20,13 +20,17 @@ export default function StaffOrdersPage() {
   const firestore = useFirestore();
   const { user, loading: userLoading } = useUser();
   
-  const { data: restaurant, loading: restaurantLoading } = useDoc<Restaurant>(
+  // 1. Fetch restaurant document where ownerUid matches the current user's ID
+  const { data: restaurants, loading: restaurantLoading } = useCollectionQuery<Restaurant>(
     'restaurants',
+    'ownerUid',
     user?.uid || ''
   );
+  const restaurant = restaurants?.[0];
 
+  // 2. Fetch orders only when we have the restaurant's actual document ID
   const { data: orders, loading: ordersLoading } = useCollectionQuery<Order>(
-    'orders',
+    restaurant?.id ? 'orders' : '',
     'restaurantId',
     restaurant?.id || ''
   );
@@ -63,6 +67,15 @@ export default function StaffOrdersPage() {
         </div>
       );
     }
+    
+    if (!orders) {
+        return (
+             <div className="text-center text-muted-foreground py-16">
+                <ShoppingBasket className="w-12 h-12 mx-auto mb-4" />
+                <p>Nenhum pedido encontrado ainda.</p>
+            </div>
+        )
+    }
 
     const filteredOrders = orders
         .filter(order => order.status === status)
@@ -77,7 +90,7 @@ export default function StaffOrdersPage() {
               {status === 'ready' && <ChefHat className="w-12 h-12" />}
               {status === 'completed' && <CheckCircle className="w-12 h-12" />}
             </div>
-            <p>Nenhum pedido {status} agora.</p>
+            <p>Nenhum pedido na categoria '{status}' agora.</p>
         </div>
       );
     }
