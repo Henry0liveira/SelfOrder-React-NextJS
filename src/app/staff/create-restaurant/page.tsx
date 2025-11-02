@@ -27,6 +27,7 @@ export default function CreateRestaurantPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  // Get hooks here, but use them inside the handler
   const auth = useAuth();
   const firestore = useFirestore();
 
@@ -53,7 +54,6 @@ export default function CreateRestaurantPage() {
       // Create a restaurant document in Firestore, using the user's UID as the document ID
       const restaurantDocRef = doc(firestore, 'restaurants', user.uid);
       await setDoc(restaurantDocRef, {
-        id: user.uid,
         name: restaurantName,
         code: newRestaurantCode,
         ownerUid: user.uid,
@@ -75,9 +75,15 @@ export default function CreateRestaurantPage() {
 
     } catch (error: any) {
       console.error("Erro ao criar restaurante:", error);
+      let description = 'Ocorreu um erro desconhecido.';
+      if (error.code === 'auth/email-already-in-use') {
+        description = 'Este endereço de e-mail já está em uso por outra conta.';
+      } else if (error.message) {
+        description = error.message;
+      }
       toast({
         title: 'Erro ao Criar Conta',
-        description: error.message || 'Ocorreu um erro desconhecido.',
+        description: description,
         variant: 'destructive',
       });
     } finally {
