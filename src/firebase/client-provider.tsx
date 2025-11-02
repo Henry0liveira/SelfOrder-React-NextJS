@@ -1,25 +1,18 @@
 'use client';
 
 import {useEffect, useState} from 'react';
-
-import type {Auth} from 'firebase/auth';
-import type {FirebaseApp} from 'firebase/app';
-import type {Firestore} from 'firebase/firestore';
-
+import { initializeFirebase } from '@/firebase';
 import {FirebaseProvider} from '@/firebase/provider';
 
 type Props = {
   children: React.ReactNode;
-  firebaseApp: FirebaseApp;
-  auth: Auth;
-  firestore: Firestore;
 };
 
+// Initialize Firebase outside of the component
+const { firebaseApp, auth, firestore } = initializeFirebase();
+
 export function FirebaseClientProvider({
-  children,
-  firebaseApp,
-  auth,
-  firestore,
+  children
 }: Props) {
   const [isMounted, setIsMounted] = useState(false);
 
