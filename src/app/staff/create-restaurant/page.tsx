@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { ArrowLeft, PlusCircle, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -50,9 +50,10 @@ export default function CreateRestaurantPage() {
       
       const newRestaurantCode = `${restaurantName.substring(0, 4).toUpperCase().replace(/\s/g, '')}${Math.floor(100 + Math.random() * 900)}`;
 
-      // Create a restaurant document in Firestore
+      // Create a restaurant document in Firestore, using the user's UID as the document ID
       const restaurantDocRef = doc(firestore, 'restaurants', user.uid);
       await setDoc(restaurantDocRef, {
+        id: user.uid,
         name: restaurantName,
         code: newRestaurantCode,
         ownerUid: user.uid,
@@ -67,7 +68,7 @@ export default function CreateRestaurantPage() {
 
       toast({
         title: 'Restaurante Criado!',
-        description: `O restaurante "${restaurantName}" está pronto.`,
+        description: `O restaurante "${restaurantName}" está pronto. Faça o login.`,
       });
       
       router.push('/staff/login');
