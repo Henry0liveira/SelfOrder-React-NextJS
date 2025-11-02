@@ -44,7 +44,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
   const restaurant = restaurants?.[0];
 
   const {data: orders, loading: ordersLoading} = useCollectionQuery<Order>(
-      customer && restaurant ? 'orders' : '',
+      (customer?.uid && restaurant?.id) ? 'orders' : '',
       'customerUid',
       customer?.uid || ''
   );
@@ -221,3 +221,5 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
     </Sheet>
   );
 }
+
+    
