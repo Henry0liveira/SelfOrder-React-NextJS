@@ -72,24 +72,32 @@ export function useCollectionQuery<T>(
   const constraintsJSON = JSON.stringify(constraints);
 
   useEffect(() => {
+    const deserializedConstraints = JSON.parse(constraintsJSON) as QueryConstraint | QueryConstraint[];
+    
     // Ensure constraints is an array
-    const constraintsArray = Array.isArray(constraints) ? constraints : [constraints];
+    const constraintsArray = Array.isArray(deserializedConstraints) ? deserializedConstraints : [deserializedConstraints];
 
     // Basic validation: if collectionName is falsy, or no valid constraints, do nothing.
-    if (!collectionName || !constraintsArray || constraintsArray.some(c => !c.field || !c.value)) {
+    if (!collectionName || !constraintsArray || constraintsArray.length === 0 || constraintsArray.some(c => c.value === undefined || c.value === null || c.value === '')) {
         setData([]);
         setLoading(false);
         return;
     }
 
-    const deserializedConstraints = JSON.parse(constraintsJSON) as QueryConstraint | QueryConstraint[];
-    const finalConstraints = Array.isArray(deserializedConstraints) ? deserializedConstraints : [deserializedConstraints];
-
-
     const collectionRef = collection(firestore, collectionName);
-    const whereClauses = finalConstraints.map(c => where(c.field, c.operator, c.value));
     
-    const q = query(collectionRef, ...whereClauses);
+    // Filter out invalid where clauses
+    const validWhereClauses = constraintsArray
+        .filter(c => c.field && c.operator && c.value !== undefined)
+        .map(c => where(c.field, c.operator, c.value));
+    
+    if (validWhereClauses.length === 0) {
+        setData([]);
+        setLoading(false);
+        return;
+    }
+
+    const q = query(collectionRef, ...validWhereClauses);
 
     const unsubscribe = onSnapshot(
       q,
@@ -109,7 +117,8 @@ export function useCollectionQuery<T>(
     );
 
     return () => unsubscribe();
-  }, [firestore, collectionName, constraintsJSON, constraints]);
+  // Using constraintsJSON ensures the effect only re-runs when the query truly changes.
+  }, [firestore, collectionName, constraintsJSON]);
 
   return {data, loading};
 }
