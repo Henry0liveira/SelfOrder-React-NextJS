@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -16,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { restaurantData } from '@/lib/mock-data';
+import type { Restaurant } from '@/types';
 
 export default function CreateRestaurantPage() {
   const [restaurantName, setRestaurantName] = useState('');
@@ -29,14 +31,13 @@ export default function CreateRestaurantPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call to create and save a new restaurant
     setTimeout(() => {
       const storedRestaurants = localStorage.getItem('restaurants');
       // Initialize with mock data if no restaurants are in localStorage
-      const allRestaurants = storedRestaurants ? JSON.parse(storedRestaurants) : restaurantData;
+      const allRestaurants: Restaurant[] = storedRestaurants ? JSON.parse(storedRestaurants) : restaurantData;
 
       // Check if email already exists
-      const emailExists = allRestaurants.some((r: any) => r.email.toLowerCase() === email.toLowerCase());
+      const emailExists = allRestaurants.some((r) => r.email.toLowerCase() === email.toLowerCase());
       if (emailExists) {
         toast({
           title: 'Error',
@@ -49,8 +50,8 @@ export default function CreateRestaurantPage() {
       
       const newRestaurantCode = `${restaurantName.substring(0, 4).toUpperCase()}${Math.floor(100 + Math.random() * 900)}`;
 
-      const newRestaurant = {
-        id: (allRestaurants.length + 1).toString(),
+      const newRestaurant: Restaurant = {
+        id: `REST${allRestaurants.length + 1}`,
         name: restaurantName,
         code: newRestaurantCode,
         email: email,
@@ -58,8 +59,8 @@ export default function CreateRestaurantPage() {
         menu: [], // Start with an empty menu
       };
 
-      allRestaurants.push(newRestaurant);
-      localStorage.setItem('restaurants', JSON.stringify(allRestaurants));
+      const updatedRestaurants = [...allRestaurants, newRestaurant];
+      localStorage.setItem('restaurants', JSON.stringify(updatedRestaurants));
 
       toast({
         title: 'Restaurant Created!',

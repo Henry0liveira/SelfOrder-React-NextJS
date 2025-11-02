@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, UtensilsCrossed, PlusCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { restaurantData } from '@/lib/mock-data';
+import type { Restaurant } from '@/types';
 
 export default function StaffLoginPage() {
   const [email, setEmail] = useState('staff@coral.cafe');
@@ -25,21 +27,28 @@ export default function StaffLoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Prime localStorage with mock data if it's not already there.
+    // This ensures the demo login always works.
+    if (!localStorage.getItem('restaurants')) {
+      localStorage.setItem('restaurants', JSON.stringify(restaurantData));
+    }
+  }, []);
+
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API authentication by checking localStorage
     setTimeout(() => {
       const storedRestaurants = localStorage.getItem('restaurants');
-      const allRestaurants = storedRestaurants ? JSON.parse(storedRestaurants) : restaurantData;
+      const allRestaurants: Restaurant[] = storedRestaurants ? JSON.parse(storedRestaurants) : [];
 
       const restaurant = allRestaurants.find(
-        (r: any) => r.email.toLowerCase() === email.toLowerCase() && r.password === password
+        (r) => r.email.toLowerCase() === email.toLowerCase() && r.password === password
       );
       
       if (restaurant) {
-        // Save logged-in restaurant to localStorage for session persistence
         localStorage.setItem('loggedInRestaurant', JSON.stringify(restaurant));
         
         toast({
