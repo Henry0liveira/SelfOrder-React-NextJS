@@ -47,6 +47,35 @@
       },
       "required": ["name", "price", "category", "imageUrl"]
     },
+     "CartItem": {
+      "title": "Cart Item",
+      "description": "Represents a menu item that has been added to a user's shopping cart.",
+      "type": "object",
+      "properties": {
+        "menuItemId": {
+          "type": "string",
+          "description": "The ID of the original menu item."
+        },
+        "name": {
+          "type": "string",
+          "description": "Denormalized name of the menu item for quick display."
+        },
+        "price": {
+          "type": "number",
+          "description": "Denormalized price of the menu item."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "How many of this item are in the cart."
+        },
+        "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Denormalized image URL for quick display."
+        }
+      },
+      "required": ["menuItemId", "name", "price", "quantity", "imageUrl"]
+    },
     "Order": {
       "title": "Order",
       "description": "A customer's order from a restaurant.",
@@ -126,6 +155,12 @@
         "$ref": "#/entities/CustomerProfile"
       },
       "description": "Stores public profile information for all users (customers and restaurant owners)."
+    },
+    "/users/{userId}/cart/{cartItemId}": {
+        "schema": {
+            "$ref": "#/entities/CartItem"
+        },
+        "description": "A subcollection storing the items in a user's shopping cart."
     }
   }
 }

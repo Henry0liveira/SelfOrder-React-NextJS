@@ -2,7 +2,7 @@
 "use client";
 
 import Image from 'next/image';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,7 @@ interface MenuViewProps {
 }
 
 export default function MenuView({ restaurant, menuItems }: MenuViewProps) {
-    const { addToCart } = useCart();
+    const { addToCart, loading: cartLoading } = useCart();
     
     const menuByCategory = menuItems.reduce((acc, item) => {
         const category = item.category || 'Uncategorized';
@@ -45,8 +45,8 @@ export default function MenuView({ restaurant, menuItems }: MenuViewProps) {
                                 </CardContent>
                                 <CardFooter className="p-4 flex justify-between items-center">
                                     <p className="text-lg font-bold text-primary">${item.price.toFixed(2)}</p>
-                                    <Button onClick={() => addToCart(item)} size="sm">
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Add
+                                    <Button onClick={() => addToCart(item)} size="sm" disabled={cartLoading}>
+                                        {cartLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <PlusCircle className="mr-2 h-4 w-4" />} Add
                                     </Button>
                                 </CardFooter>
                             </Card>

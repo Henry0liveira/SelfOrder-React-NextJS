@@ -20,7 +20,23 @@ export type Restaurant = {
 
 export type OrderStatus = 'new' | 'in-progress' | 'ready' | 'completed';
 
+// Represents an item as it is stored in the Firestore cart subcollection
+export type FirestoreCartItem = {
+    id: string; // Firestore document ID for the cart item
+    menuItemId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    imageUrl: string;
+    description?: string;
+    category?: string;
+    imageHint?: string;
+};
+
+
+// Represents an item in the cart in the UI, containing the full MenuItem object
 export type CartItem = {
+  id: string; // This is the cart item's document ID from Firestore
   menuItem: MenuItem;
   quantity: number;
 };

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Home, ShoppingCart, ClipboardList, Loader2 } from 'lucide-react';
+import { Home, ShoppingCart, ClipboardList, Loader2, UtensilsCrossed } from 'lucide-react';
 import { CartProvider, useCart } from '@/hooks/use-cart';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
@@ -45,12 +45,15 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
 
   const {data: customerOrders, loading: ordersLoading} = useCollectionQuery<Order>(
       (restaurant?.id && customer?.uid) ? 'orders' : '',
-      [{field: 'customerUid', operator: '==', value: customer?.uid}, {field: 'restaurantId', operator: '==', value: restaurant?.id}]
+      [
+        {field: 'customerUid', operator: '==', value: customer?.uid}, 
+        {field: 'restaurantId', operator: '==', value: restaurant?.id}
+      ]
   );
   
   const hasOrders = customerOrders && customerOrders.length > 0;
 
-  const { cartItems, cartTotal, removeFromCart, updateQuantity, clearCart, itemCount } = useCart();
+  const { cartItems, cartTotal, removeFromCart, updateQuantity, clearCart, itemCount, loading: cartLoading } = useCart();
   const { toast } = useToast();
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -92,7 +95,10 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
 
     try {
         const ordersCollectionRef = collection(firestore, 'orders');
-        const docRef = await addDoc(ordersCollectionRef, newOrder);
+        await addDoc(ordersCollectionRef, newOrder);
+
+        // Clear the cart in firestore
+        await clearCart();
 
         toast({
           title: "Pedido realizado!",
@@ -100,7 +106,6 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
         });
         
         setIsCartOpen(false); // Close the sheet
-        clearCart();
         router.push(`/${restaurantCode}/confirmation`);
 
     } catch (error) {
@@ -109,9 +114,9 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loading = restaurantLoading || userLoading;
+  const loading = restaurantLoading || userLoading || cartLoading;
 
-  if (loading) {
+  if (loading && !restaurant) { // only show global loader if restaurant is not yet loaded
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -151,7 +156,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
               
               <SheetTrigger asChild>
                 <button className="flex flex-col items-center justify-center gap-1 text-muted-foreground relative">
-                  <ShoppingCart className="h-6 w-6" />
+                  {cartLoading ? <Loader2 className="h-6 w-6 animate-spin"/> : <ShoppingCart className="h-6 w-6" />}
                   <span className="text-xs font-medium">Carrinho</span>
                   {itemCount > 0 && (
                       <span className="absolute -top-1 right-1/2 translate-x-4 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
@@ -178,22 +183,22 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
           {cartItems.length > 0 ? (
               <div className="flex-grow overflow-y-auto -mx-6 px-6 my-4 space-y-4">
                   {cartItems.map(cartItem => (
-                      <div key={cartItem.menuItem.id} className="flex items-center gap-4">
+                      <div key={cartItem.id} className="flex items-center gap-4">
                           <Image src={cartItem.menuItem.imageUrl} alt={cartItem.menuItem.name} width={64} height={64} className="rounded-md object-cover"/>
                           <div className="flex-grow">
                               <p className="font-semibold">{cartItem.menuItem.name}</p>
                               <p className="text-sm text-muted-foreground">${cartItem.menuItem.price.toFixed(2)}</p>
                               <div className="flex items-center gap-2 mt-1">
-                                  <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateQuantity(cartItem.menuItem.id, cartItem.quantity - 1)}>
+                                  <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)}>
                                       <MinusCircle className="h-4 w-4"/>
                                   </Button>
                                   <span className="w-4 text-center">{cartItem.quantity}</span>
-                                  <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateQuantity(cartItem.menuItem.id, cartItem.quantity + 1)}>
+                                  <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}>
                                       <PlusCircle className="h-4 w-4"/>
                                   </Button>
                               </div>
                           </div>
-                          <Button variant="ghost" size="icon" onClick={() => removeFromCart(cartItem.menuItem.id)} aria-label="Remove item">
+                          <Button variant="ghost" size="icon" onClick={() => removeFromCart(cartItem.id)} aria-label="Remove item">
                               <Trash2 className="h-5 w-5 text-destructive"/>
                           </Button>
                       </div>
