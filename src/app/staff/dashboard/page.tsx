@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useEffect } from 'react';
 import { LogOut, UtensilsCrossed, ClipboardList, BookOpen, QrCode, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,11 +9,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import type { Restaurant } from '@/types';
 import { signOut } from 'firebase/auth';
-import { useAuth } from '@/firebase';
 
 
 export default function StaffDashboardPage() {
@@ -23,20 +23,21 @@ export default function StaffDashboardPage() {
   
   const { data: restaurantInfo, loading: restaurantLoading } = useDoc<Restaurant>(
     'restaurants',
-    user?.uid || ''
+    user?.uid
   );
 
-  if (userLoading || restaurantLoading) {
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push('/staff/login');
+    }
+  }, [user, userLoading, router]);
+
+  if (userLoading || restaurantLoading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-secondary/30">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
       </div>
     );
-  }
-
-  if (!user) {
-    router.push('/staff/login');
-    return null;
   }
   
   const handleLogout = async () => {
@@ -63,7 +64,10 @@ export default function StaffDashboardPage() {
                     <CardDescription>Não encontramos um restaurante associado à sua conta.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button onClick={handleLogout}>Fazer Login com Outra Conta</Button>
+                    <Button asChild className="mb-4">
+                      <Link href="/staff/create-restaurant">Criar um Restaurante</Link>
+                    </Button>
+                    <Button onClick={handleLogout} variant="secondary">Fazer Login com Outra Conta</Button>
                 </CardContent>
             </Card>
         </div>
