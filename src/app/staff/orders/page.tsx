@@ -22,17 +22,15 @@ export default function StaffOrdersPage() {
   
   // 1. Fetch restaurant document where ownerUid matches the current user's ID
   const { data: restaurants, loading: restaurantLoading } = useCollectionQuery<Restaurant>(
-    'restaurants',
-    'ownerUid',
-    user?.uid || ''
+    user?.uid ? 'restaurants' : '',
+    { field: 'ownerUid', operator: '==', value: user?.uid || '' }
   );
   const restaurant = restaurants?.[0];
 
   // 2. Fetch orders only when we have the restaurant's actual document ID
   const { data: orders, loading: ordersLoading } = useCollectionQuery<Order>(
     restaurant?.id ? 'orders' : '',
-    'restaurantId',
-    restaurant?.id || ''
+    { field: 'restaurantId', operator: '==', value: restaurant?.id || '' }
   );
 
   const loading = userLoading || restaurantLoading || ordersLoading;
