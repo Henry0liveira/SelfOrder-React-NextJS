@@ -1,3 +1,4 @@
+
 'use client';
 
 import {useEffect, useState} from 'react';
@@ -21,6 +22,10 @@ export function useCollection<T>(collectionName: string) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!collectionName) {
+      setLoading(false);
+      return;
+    }
     const collectionRef = collection(firestore, collectionName);
 
     const unsubscribe = onSnapshot(
@@ -56,6 +61,10 @@ export function useCollectionQuery<T>(
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!collectionName || !field || !value) {
+        setLoading(false);
+        return;
+    }
     const collectionRef = collection(firestore, collectionName);
     const q = query(collectionRef, where(field, '==', value));
 
