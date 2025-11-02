@@ -53,8 +53,3 @@ export const findRestaurantByCode = (code: string): Restaurant | undefined => {
   const allRestaurants = storedRestaurants ? JSON.parse(storedRestaurants) : restaurantData;
   return allRestaurants.find((r: Restaurant) => r.code.toUpperCase() === code.toUpperCase());
 };
-
-// No longer needed as we check from a dynamic list in the login page
-// export const findRestaurantByEmail = (email: string): Restaurant | undefined => {
-//     return restaurantData.find(r => r.email.toLowerCase() === email.toLowerCase());
-// };
