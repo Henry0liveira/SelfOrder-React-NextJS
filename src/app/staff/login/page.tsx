@@ -29,7 +29,7 @@ export default function StaffLoginPage() {
 
   useEffect(() => {
     // Prime localStorage with mock data if it's not already there.
-    // This ensures the demo login always works.
+    // This ensures the demo login always works on first load.
     if (!localStorage.getItem('restaurants')) {
       localStorage.setItem('restaurants', JSON.stringify(restaurantData));
     }
@@ -42,6 +42,7 @@ export default function StaffLoginPage() {
 
     setTimeout(() => {
       const storedRestaurants = localStorage.getItem('restaurants');
+      // The list will be either the initial mock data or the updated list with new restaurants.
       const allRestaurants: Restaurant[] = storedRestaurants ? JSON.parse(storedRestaurants) : [];
 
       const restaurant = allRestaurants.find(

@@ -32,11 +32,12 @@ export default function CreateRestaurantPage() {
     setIsLoading(true);
 
     setTimeout(() => {
+      // Always read the latest from localStorage first
       const storedRestaurants = localStorage.getItem('restaurants');
-      // Initialize with mock data if no restaurants are in localStorage
+      // Initialize with mock data if no restaurants are in localStorage, otherwise parse what's there
       const allRestaurants: Restaurant[] = storedRestaurants ? JSON.parse(storedRestaurants) : restaurantData;
 
-      // Check if email already exists
+      // Check if email already exists in the current list of restaurants
       const emailExists = allRestaurants.some((r) => r.email.toLowerCase() === email.toLowerCase());
       if (emailExists) {
         toast({
@@ -48,7 +49,7 @@ export default function CreateRestaurantPage() {
         return;
       }
       
-      const newRestaurantCode = `${restaurantName.substring(0, 4).toUpperCase()}${Math.floor(100 + Math.random() * 900)}`;
+      const newRestaurantCode = `${restaurantName.substring(0, 4).toUpperCase().replace(/\s/g, '')}${Math.floor(100 + Math.random() * 900)}`;
 
       const newRestaurant: Restaurant = {
         id: `REST${allRestaurants.length + 1}`,
