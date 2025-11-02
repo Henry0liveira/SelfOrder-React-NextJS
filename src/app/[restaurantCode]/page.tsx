@@ -1,27 +1,28 @@
 
 "use client";
 
-import { findRestaurantByCode } from '@/lib/mock-data';
-import { notFound, useRouter, useParams } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import MenuView from '@/components/menu-view';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import type { Restaurant } from '@/types';
+import type { Restaurant, MenuItem } from '@/types';
+import { useCollection, useCollectionQuery } from '@/firebase';
 
 
 export default function MenuPage() {
   const params = useParams();
   const restaurantCode = params.restaurantCode as string;
-  const [restaurant, setRestaurant] = useState<Restaurant | null | undefined>(undefined);
   
-  useEffect(() => {
-    const foundRestaurant = findRestaurantByCode(restaurantCode);
-    setRestaurant(foundRestaurant);
-  }, [restaurantCode]);
+  const {data: restaurants, loading: restaurantLoading} = useCollectionQuery<Restaurant>('restaurants', 'code', restaurantCode);
+  const restaurant = restaurants?.[0];
 
-  if (restaurant === undefined) {
-    // This state is handled by the parent layout now
-    return null;
+  const {data: menuItems, loading: menuLoading} = useCollection<MenuItem>(
+    restaurant ? `restaurants/${restaurant.id}/menu` : ''
+  );
+  
+  const loading = restaurantLoading || menuLoading;
+
+  if (loading) {
+    return null; // The parent layout will show a global loader
   }
 
   if (!restaurant) {
@@ -29,6 +30,6 @@ export default function MenuPage() {
   }
 
   return (
-    <MenuView restaurant={restaurant} />
+    <MenuView restaurant={restaurant} menuItems={menuItems || []} />
   );
 }

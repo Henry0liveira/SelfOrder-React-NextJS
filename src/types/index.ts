@@ -21,24 +21,28 @@ export type Restaurant = {
 export type OrderStatus = 'new' | 'in-progress' | 'ready' | 'completed';
 
 export type CartItem = {
+  menuItem: MenuItem;
+  quantity: number;
+};
+
+export type OrderItem = {
   menuItemId: string; // The ID of the menu item
   name: string;
   quantity: number;
   price: number;
 };
 
-export type CustomerAccount = {
+export type CustomerProfile = {
   uid: string; // Corresponds to Firebase Auth UID
   name: string;
   email: string;
   phone?: string;
-  allowPromotions: boolean;
 };
 
 export type Order = {
   id: string; // Firestore document ID
   restaurantId: string; // The ID of the restaurant document
-  items: CartItem[];
+  items: OrderItem[];
   total: number;
   status: OrderStatus;
   timestamp: Timestamp; // Firestore Timestamp

@@ -6,22 +6,24 @@ import { PlusCircle } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Restaurant } from '@/types';
+import type { Restaurant, MenuItem } from '@/types';
 
 interface MenuViewProps {
     restaurant: Restaurant;
+    menuItems: MenuItem[];
 }
 
-export default function MenuView({ restaurant }: MenuViewProps) {
+export default function MenuView({ restaurant, menuItems }: MenuViewProps) {
     const { addToCart } = useCart();
     
-    const menuByCategory = restaurant.menu.reduce((acc, item) => {
-        if (!acc[item.category]) {
-            acc[item.category] = [];
+    const menuByCategory = menuItems.reduce((acc, item) => {
+        const category = item.category || 'Uncategorized';
+        if (!acc[category]) {
+            acc[category] = [];
         }
-        acc[item.category].push(item);
+        acc[category].push(item);
         return acc;
-    }, {} as Record<string, typeof restaurant.menu>);
+    }, {} as Record<string, MenuItem[]>);
 
 
     return (

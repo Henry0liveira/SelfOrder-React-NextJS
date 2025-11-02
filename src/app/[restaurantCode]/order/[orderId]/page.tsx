@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Loader2, ShoppingBasket, ChefHat, CheckCircle2 } from 'lucide-react';
 import type { Order, OrderStatus } from '@/types';
 import { useParams } from 'next/navigation';
+import { useDoc } from '@/firebase';
 
 const statusConfig: Record<OrderStatus, { text: string; progress: number; icon: React.ReactNode }> = {
     'new': { text: 'Pedido recebido', progress: 25, icon: <ShoppingBasket className="h-8 w-8" /> },
@@ -24,25 +25,7 @@ export default function OrderStatusPage() {
   const orderId = params.orderId as string;
   const restaurantCode = params.restaurantCode as string;
 
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchOrder = () => {
-      const allOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]').map((o: any) => ({...o, timestamp: new Date(o.timestamp)}));
-      const foundOrder = allOrders.find(o => o.id === orderId);
-      if (foundOrder) {
-        setOrder(foundOrder);
-      }
-      setLoading(false);
-    };
-
-    fetchOrder();
-
-    // Poll for updates every 2 seconds
-    const interval = setInterval(fetchOrder, 2000);
-    return () => clearInterval(interval);
-  }, [orderId]);
+  const { data: order, loading } = useDoc<Order>('orders', orderId);
 
   if (loading) {
     return (
@@ -83,7 +66,7 @@ export default function OrderStatusPage() {
             {currentStatus.text}
           </CardTitle>
           <CardDescription className="text-lg">
-            Acompanhe o status do seu pedido #{order.id}
+            Acompanhe o status do seu pedido #{order.id.substring(0,6)}...
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -103,9 +86,9 @@ export default function OrderStatusPage() {
                 <h3 className="font-semibold mb-2">Resumo do Pedido</h3>
                 <ul className="space-y-2 text-sm">
                     {order.items.map((item, index) => (
-                        <li key={`${item.menuItem.id}-${index}`} className="flex justify-between">
-                        <span>{item.quantity}x {item.menuItem.name}</span>
-                        <span className="font-mono">${(item.menuItem.price * item.quantity).toFixed(2)}</span>
+                        <li key={`${item.menuItemId}-${index}`} className="flex justify-between">
+                        <span>{item.quantity}x {item.name}</span>
+                        <span className="font-mono">${(item.price * item.quantity).toFixed(2)}</span>
                         </li>
                     ))}
                 </ul>
@@ -129,4 +112,3 @@ export default function OrderStatusPage() {
     </div>
   );
 }
-

@@ -14,11 +14,12 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import type { Restaurant, CustomerAccount } from '@/types';
-import { findRestaurantByCode } from '@/lib/mock-data';
+import type { Restaurant } from '@/types';
 import Link from 'next/link';
+import { useAuth, useCollectionQuery, useFirestore } from '@/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 
 export default function CustomerSignUpPage() {
@@ -28,63 +29,72 @@ export default function CustomerSignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [allowPromotions, setAllowPromotions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const firestore = useFirestore();
+
+  const {data: restaurants, loading} = useCollectionQuery<Restaurant>('restaurants', 'code', restaurantCode);
+  const restaurant = restaurants?.[0];
 
   useEffect(() => {
-    if (restaurantCode) {
-        const foundRestaurant = findRestaurantByCode(restaurantCode);
-        if (foundRestaurant) {
-            setRestaurant(foundRestaurant);
-        } else {
-            router.push('/not-found');
-        }
+    if (!loading && !restaurant) {
+        router.push('/not-found');
     }
-  }, [restaurantCode, router]);
+  }, [restaurant, loading, router]);
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !name) {
       toast({
-        title: 'Missing information',
-        description: 'Please fill out all required fields.',
+        title: 'Informação faltando',
+        description: 'Por favor, preencha todos os campos obrigatórios.',
         variant: 'destructive',
       });
       return;
     }
     setIsLoading(true);
 
-    setTimeout(() => {
-        const customerAccounts: CustomerAccount[] = JSON.parse(localStorage.getItem('customerAccounts') || '[]');
-        
-        const emailExists = customerAccounts.some(c => c.email.toLowerCase() === email.toLowerCase());
-        if(emailExists) {
-            toast({
-                title: "Account already exists",
-                description: "An account with this email already exists. Please log in.",
-                variant: 'destructive'
-            });
-            setIsLoading(false);
-            router.push(`/${restaurantCode}/login`);
-            return;
-        }
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-      const newCustomer: CustomerAccount = { name, email, password, phone, allowPromotions };
-      const updatedAccounts = [...customerAccounts, newCustomer];
-      localStorage.setItem('customerAccounts', JSON.stringify(updatedAccounts));
-      
-      localStorage.setItem(`customerData-${restaurantCode}`, JSON.stringify(newCustomer));
-      
-      toast({
-        title: 'Account Created!',
-        description: `Welcome, ${name}! Redirecting you to the menu.`,
-      });
-      
-      router.push(`/${restaurantCode}`);
-    }, 1000);
+        // Update user profile in Firebase Auth
+        await updateProfile(user, { displayName: name });
+        
+        // Create user profile in Firestore
+        const userDocRef = doc(firestore, 'users', user.uid);
+        await setDoc(userDocRef, {
+            uid: user.uid,
+            name: name,
+            email: email,
+            phone: phone,
+        });
+
+        toast({
+            title: 'Conta Criada!',
+            description: `Bem-vindo, ${name}! Redirecionando você para o cardápio.`,
+        });
+        
+        router.push(`/${restaurantCode}`);
+
+    } catch (error: any) {
+        console.error("Error creating customer account:", error);
+        let description = 'Ocorreu um erro desconhecido.';
+        if (error.code === 'auth/email-already-in-use') {
+            description = 'Este e-mail já está sendo usado por outra conta.';
+        } else if (error.message) {
+            description = error.message;
+        }
+        toast({
+            title: "Erro ao Criar Conta",
+            description,
+            variant: "destructive"
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -94,19 +104,19 @@ export default function CustomerSignUpPage() {
             <div className="inline-flex items-center justify-center bg-primary rounded-full p-3 shadow-lg mx-auto mb-4">
                 <UserPlus className="h-8 w-8 text-primary-foreground" />
             </div>
-          <CardTitle className="text-3xl font-headline">Create your Account</CardTitle>
+          <CardTitle className="text-3xl font-headline">Crie sua Conta</CardTitle>
           <CardDescription>
-            to order from <span className="font-semibold text-primary">{restaurant?.name || '...'}</span>
+            para pedir de <span className="font-semibold text-primary">{restaurant?.name || '...'}</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp} className="space-y-6">
              <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Nome Completo</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Your name"
+                placeholder="Seu nome"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -118,7 +128,7 @@ export default function CustomerSignUpPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="your@email.com"
+                placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -126,11 +136,11 @@ export default function CustomerSignUpPage() {
               />
             </div>
              <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Create a password"
+                placeholder="Crie uma senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -138,7 +148,7 @@ export default function CustomerSignUpPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone (Optional)</Label>
+              <Label htmlFor="phone">Telefone (Opcional)</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -148,21 +158,15 @@ export default function CustomerSignUpPage() {
                 disabled={isLoading}
               />
             </div>
-            <div className="flex items-center space-x-2">
-                <Checkbox id="promotions" checked={allowPromotions} onCheckedChange={(checked) => setAllowPromotions(checked as boolean)} />
-                <Label htmlFor="promotions" className="text-sm font-normal text-muted-foreground">
-                    I agree to receive promotions via email.
-                </Label>
-            </div>
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-              {isLoading ? 'Creating Account...' : 'Sign Up & See Menu'}
+            <Button type="submit" className="w-full" size="lg" disabled={isLoading || loading}>
+              {isLoading ? 'Criando Conta...' : 'Cadastrar e Ver Cardápio'}
               {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
           </form>
            <div className="mt-4 text-center text-sm">
-                Already have an account?{' '}
+                Já tem uma conta?{' '}
                 <Link href={`/${restaurantCode}/login`} className="underline text-primary">
-                    Log In
+                    Faça Login
                 </Link>
             </div>
         </CardContent>
@@ -170,4 +174,3 @@ export default function CustomerSignUpPage() {
     </div>
   );
 }
-

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -41,8 +42,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return [...prevItems, { menuItem: item, quantity: 1 }];
     });
     toast({
-      title: "Added to cart",
-      description: `${item.name} is now in your order.`,
+      title: "Adicionado ao carrinho",
+      description: `${item.name} está agora no seu pedido.`,
     });
   };
 

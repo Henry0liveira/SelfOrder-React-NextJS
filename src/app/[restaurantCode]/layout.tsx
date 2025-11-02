@@ -1,21 +1,21 @@
 
-
 "use client";
 
 import { Home, ShoppingCart, ClipboardList, Loader2 } from 'lucide-react';
 import { CartProvider, useCart } from '@/hooks/use-cart';
-import { findRestaurantByCode } from '@/lib/mock-data';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Restaurant } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import { MinusCircle, PlusCircle, Trash2, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { Order, CustomerAccount } from '@/types';
+import type { Order } from '@/types';
+import { useUser, useCollectionQuery, useFirestore } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 
 // We need to wrap the layout in the CartProvider so all pages have access to the cart
@@ -37,76 +37,84 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
   const restaurantCode = params.restaurantCode as string;
   const pathname = usePathname();
   const router = useRouter();
+  const firestore = useFirestore();
 
-  const [restaurant, setRestaurant] = useState<Restaurant | null | undefined>(undefined);
-  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const {user: customer, loading: userLoading} = useUser();
+  const {data: restaurants, loading: restaurantLoading} = useCollectionQuery<Restaurant>('restaurants', 'code', restaurantCode);
+  const restaurant = restaurants?.[0];
+
+  const {data: orders, loading: ordersLoading} = useCollectionQuery<Order>(
+      customer && restaurant ? 'orders' : '',
+      'customerUid',
+      customer?.uid || ''
+  );
+  
+  const lastOrderForRestaurant = orders
+      ?.filter(o => o.restaurantId === restaurant?.id)
+      .sort((a,b) => b.timestamp.toMillis() - a.timestamp.toMillis())[0];
 
   const { cartItems, cartTotal, removeFromCart, updateQuantity, clearCart, itemCount } = useCart();
   const { toast } = useToast();
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-
   useEffect(() => {
-    // Check if customer data exists, if not, redirect to login
-    const customerData = localStorage.getItem(`customerData-${restaurantCode}`);
-    if (!customerData && !pathname.includes('/login') && !pathname.includes('/signup')) {
+    // Redirect to login if not authenticated and not on auth pages
+    if (!userLoading && !customer && !pathname.includes('/login') && !pathname.includes('/signup')) {
+      router.push(`/${restaurantCode}/login`);
+    }
+  }, [customer, userLoading, restaurantCode, router, pathname]);
+
+  const handlePlaceOrder = async () => {
+    if (!customer) {
+      toast({ title: "Erro", description: "Você precisa estar logado para fazer um pedido.", variant: "destructive"});
       router.push(`/${restaurantCode}/login`);
       return;
     }
-
-    const foundRestaurant = findRestaurantByCode(restaurantCode);
-    setRestaurant(foundRestaurant);
-
-    const orders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]');
-    const customer = customerData ? (JSON.parse(customerData) as CustomerAccount) : null;
-    if (customer) {
-      const latestOrderForCustomer = orders
-        .filter(o => o.restaurantId === foundRestaurant?.id && o.customer?.email === customer.email)
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-
-      if (latestOrderForCustomer) {
-        setLastOrderId(latestOrderForCustomer.id);
-      }
-    }
-  }, [restaurantCode, router, pathname]);
-
-  const handlePlaceOrder = () => {
-    const customerData = localStorage.getItem(`customerData-${restaurantCode}`);
-    if (!customerData) {
-      toast({ title: "Error", description: "You must be logged in to place an order.", variant: "destructive"});
-      router.push(`/${restaurantCode}/login`);
+    if (!restaurant) {
+      toast({ title: "Erro", description: "Restaurante não encontrado.", variant: "destructive"});
       return;
     }
-    const customer = JSON.parse(customerData) as CustomerAccount;
 
-    const newOrder: Omit<Order, 'id'> = {
-      restaurantId: restaurant!.id,
-      customer: customer,
-      items: cartItems,
+    const newOrder = {
+      restaurantId: restaurant.id,
+      customerUid: customer.uid,
+      customer: {
+        name: customer.displayName || 'Anonymous',
+        email: customer.email || 'no-email'
+      },
+      items: cartItems.map(ci => ({
+          menuItemId: ci.menuItem.id,
+          name: ci.menuItem.name,
+          quantity: ci.quantity,
+          price: ci.menuItem.price,
+      })),
       total: cartTotal,
-      status: 'new',
-      timestamp: new Date(),
+      status: 'new' as const,
+      timestamp: serverTimestamp(),
     };
 
-    const existingOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]').map((o: any) => ({...o, timestamp: new Date(o.timestamp)}));
-    const fullOrder: Order = {
-      ...newOrder,
-      id: `ORD${1001 + existingOrders.length}`,
-    }
-    localStorage.setItem('orders', JSON.stringify([fullOrder, ...existingOrders]));
+    try {
+        const ordersCollectionRef = collection(firestore, 'orders');
+        const docRef = await addDoc(ordersCollectionRef, newOrder);
 
-    toast({
-      title: "Order placed!",
-      description: "Your order has been sent to the kitchen.",
-    });
-    
-    setIsCartOpen(false); // Close the sheet
-    clearCart();
-    router.push(`/${restaurantCode}/order/${fullOrder.id}`);
+        toast({
+          title: "Pedido realizado!",
+          description: "Seu pedido foi enviado para a cozinha.",
+        });
+        
+        setIsCartOpen(false); // Close the sheet
+        clearCart();
+        router.push(`/${restaurantCode}/order/${docRef.id}`);
+
+    } catch (error) {
+        console.error("Error placing order: ", error);
+        toast({ title: "Erro", description: "Não foi possível realizar o pedido.", variant: "destructive"});
+    }
   };
 
+  const loading = restaurantLoading || userLoading;
 
-  if (restaurant === undefined) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -114,7 +122,6 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // Don't show layout on login, confirmation, or not-found pages
   if (pathname.includes('/login') || pathname.includes('/signup') || pathname.includes('/confirmation') || pathname.includes('/not-found') || !restaurant) {
       return <>{children}</>;
   }
@@ -136,7 +143,6 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
             {children}
         </main>
         
-        {/* Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg z-50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-3 items-center h-16">
@@ -157,7 +163,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
                 </button>
               </SheetTrigger>
 
-              <Link href={lastOrderId ? `/${restaurantCode}/order/${lastOrderId}` : '#'} onClick={(e) => !lastOrderId && e.preventDefault()} className={`flex flex-col items-center justify-center gap-1 text-muted-foreground ${pathname.includes('/order/') ? 'text-primary' : ''} ${!lastOrderId ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <Link href={lastOrderForRestaurant ? `/${restaurantCode}/order/${lastOrderForRestaurant.id}` : '#'} onClick={(e) => !lastOrderForRestaurant && e.preventDefault()} className={`flex flex-col items-center justify-center gap-1 text-muted-foreground ${pathname.includes('/order/') ? 'text-primary' : ''} ${!lastOrderForRestaurant ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <ClipboardList className="h-6 w-6" />
                   <span className="text-xs font-medium">Pedidos</span>
               </Link>
