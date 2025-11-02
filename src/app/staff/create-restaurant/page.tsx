@@ -27,7 +27,6 @@ export default function CreateRestaurantPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  // Get hooks here, but use them inside the handler
   const auth = useAuth();
   const firestore = useFirestore();
 
