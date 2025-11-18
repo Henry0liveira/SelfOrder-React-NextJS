@@ -12,18 +12,18 @@ export default function Home() {
           <UtensilsCrossed className="h-10 w-10 text-primary-foreground" />
         </div>
         <h1 className="text-5xl md:text-6xl font-headline font-bold text-primary tracking-tighter">
-          MenuQR
+          SelfOrder
         </h1>
         <p className="mt-2 text-lg text-muted-foreground max-w-md mx-auto">
-          The simplest way to view menus and place orders.
+          A maneira mais simples de realizar pedidos.
         </p>
       </div>
 
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card className="transform hover:scale-105 transition-transform duration-300 ease-in-out shadow-xl">
           <CardHeader>
-            <CardTitle className="text-2xl font-headline">For Customers</CardTitle>
-            <CardDescription>Enter a restaurant code to view the menu and order.</CardDescription>
+            <CardTitle className="text-2xl font-headline">Para clientes</CardTitle>
+            <CardDescription>Digite o código de um restaurante</CardDescription>
           </CardHeader>
           <CardContent>
             <CustomerPortal />
@@ -32,8 +32,8 @@ export default function Home() {
         
         <Card className="transform hover:scale-105 transition-transform duration-300 ease-in-out shadow-xl">
           <CardHeader>
-            <CardTitle className="text-2xl font-headline">For Restaurants</CardTitle>
-            <CardDescription>Manage your menu and track incoming orders.</CardDescription>
+            <CardTitle className="text-2xl font-headline">Para restaurantes</CardTitle>
+            <CardDescription>Gerencie seus pedidos e cardápio</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-center h-full pt-6">
             <Button size="lg" className="w-full" asChild>
