@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { LogOut, UtensilsCrossed, ClipboardList, BookOpen, QrCode, Loader2, Bot } from 'lucide-react';
+import { LogOut, UtensilsCrossed, ClipboardList, BookOpen, QrCode, Loader2, Bot, AreaChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -11,10 +11,16 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useAuth, useCollection, useFirestore } from '@/firebase';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import type { Restaurant, MenuItem, Order, MockCustomer } from '@/types';
+import type { Restaurant, MenuItem, Order } from '@/types';
 import { signOut } from 'firebase/auth';
-import { collection, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, writeBatch, serverTimestamp, doc } from 'firebase/firestore';
 
+
+// Define a mock customer type locally as it's only used here
+type MockCustomer = {
+    name: string;
+    email: string;
+};
 
 export default function StaffDashboardPage() {
   const router = useRouter();
@@ -201,7 +207,7 @@ export default function StaffDashboardPage() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <Link href="/staff/orders" className="block transform hover:scale-105 transition-transform duration-300 md:col-span-1">
+            <Link href="/staff/orders" className="block transform hover:scale-105 transition-transform duration-300">
                 <Card className="h-full shadow-xl text-center">
                     <CardHeader>
                         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
@@ -215,7 +221,7 @@ export default function StaffDashboardPage() {
                 </Card>
             </Link>
             
-            <Link href="/staff/menu" className="block transform hover:scale-105 transition-transform duration-300 md:col-span-1">
+            <Link href="/staff/menu" className="block transform hover:scale-105 transition-transform duration-300">
                  <Card className="h-full shadow-xl text-center">
                     <CardHeader>
                          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
@@ -229,11 +235,11 @@ export default function StaffDashboardPage() {
                 </Card>
             </Link>
 
-            <Link href="/staff/kpis" className="block transform hover:scale-105 transition-transform duration-300 md:col-span-1">
+            <Link href="/staff/kpis" className="block transform hover:scale-105 transition-transform duration-300">
                  <Card className="h-full shadow-xl text-center">
                     <CardHeader>
                          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
-                            <Bot className="h-10 w-10 text-primary" />
+                            <AreaChart className="h-10 w-10 text-primary" />
                         </div>
                         <CardTitle className="text-2xl font-headline">Visualizar KPIs</CardTitle>
                     </CardHeader>
@@ -242,7 +248,9 @@ export default function StaffDashboardPage() {
                     </CardContent>
                 </Card>
             </Link>
-
+        </div>
+        
+        <div className="max-w-4xl mx-auto mt-8">
             <Card className="md:col-span-3 transform hover:scale-105 transition-transform duration-300 shadow-xl text-center">
                 <CardHeader>
                     <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
@@ -260,11 +268,8 @@ export default function StaffDashboardPage() {
                     </Button>
                 </CardContent>
             </Card>
-
         </div>
       </main>
     </div>
   );
 }
-
-    

@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 
 export type MenuItem = {
@@ -69,4 +70,10 @@ export type Order = {
   },
   rating?: number; // Optional: Customer rating from 1 to 5
   review?: string; // Optional: Customer's text review
+};
+
+
+export type MockCustomer = {
+    name: string;
+    email: string;
 };
