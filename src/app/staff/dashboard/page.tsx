@@ -1,29 +1,36 @@
 
 "use client";
 
-import { useEffect } from 'react';
-import { LogOut, UtensilsCrossed, ClipboardList, BookOpen, QrCode, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { LogOut, UtensilsCrossed, ClipboardList, BookOpen, QrCode, Loader2, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useCollection, useFirestore } from '@/firebase';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import type { Restaurant } from '@/types';
+import type { Restaurant, MenuItem, Order, MockCustomer } from '@/types';
 import { signOut } from 'firebase/auth';
+import { collection, writeBatch, serverTimestamp } from 'firebase/firestore';
 
 
 export default function StaffDashboardPage() {
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const { user, loading: userLoading } = useUser();
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const { data: restaurantInfo, loading: restaurantLoading } = useDoc<Restaurant>(
     'restaurants',
-    user?.uid
+    user?.uid || '' // Prevent undefined from being passed
+  );
+
+  const { data: menuItems, loading: menuLoading } = useCollection<MenuItem>(
+    user?.uid ? `restaurants/${user.uid}/menu` : ''
   );
 
   useEffect(() => {
@@ -31,14 +38,6 @@ export default function StaffDashboardPage() {
       router.push('/staff/login');
     }
   }, [user, userLoading, router]);
-
-  if (userLoading || restaurantLoading || !user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-secondary/30">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-      </div>
-    );
-  }
   
   const handleLogout = async () => {
     await signOut(auth);
@@ -55,6 +54,92 @@ export default function StaffDashboardPage() {
     }
   };
 
+  const generateMockOrders = async () => {
+    if (!user || !restaurantInfo || !menuItems || menuItems.length === 0) {
+      toast({
+        title: "Não é possível gerar dados",
+        description: "Certifique-se de que o restaurante está carregado e tem itens de menu.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsGenerating(true);
+
+    const mockCustomers: MockCustomer[] = [
+      { name: "Alice", email: "alice@example.com" },
+      { name: "Bob", email: "bob@example.com" },
+      { name: "Charlie", email: "charlie@example.com" },
+      { name: "Diana", email: "diana@example.com" },
+      { name: "Ethan", email: "ethan@example.com" },
+    ];
+    
+    const numberOfOrders = Math.floor(Math.random() * 5) + 1; // 1 a 5 pedidos
+    const batch = writeBatch(firestore);
+    const ordersCollectionRef = collection(firestore, 'orders');
+
+    for (let i = 0; i < numberOfOrders; i++) {
+        const customer = mockCustomers[Math.floor(Math.random() * mockCustomers.length)];
+        const numItemsInOrder = Math.floor(Math.random() * 2) + 3; // 3 ou 4 pratos
+        const orderItems = [];
+        let orderTotal = 0;
+
+        for (let j = 0; j < numItemsInOrder; j++) {
+            const menuItem = menuItems[Math.floor(Math.random() * menuItems.length)];
+            const quantity = 1;
+            orderItems.push({
+                menuItemId: menuItem.id,
+                name: menuItem.name,
+                quantity: quantity,
+                price: menuItem.price,
+            });
+            orderTotal += menuItem.price * quantity;
+        }
+
+        const newOrder: Omit<Order, 'id'> = {
+            restaurantId: restaurantInfo.id,
+            customerUid: `mock_${Date.now()}_${i}`,
+            customer: { name: customer.name, email: customer.email },
+            items: orderItems,
+            total: orderTotal,
+            status: 'completed',
+            timestamp: serverTimestamp(),
+            rating: Math.floor(Math.random() * 3) + 3, // Avaliação entre 3 e 5
+            review: "Ótima experiência! Comida deliciosa."
+        };
+        
+        const newOrderRef = doc(ordersCollectionRef);
+        batch.set(newOrderRef, newOrder);
+    }
+
+    try {
+        await batch.commit();
+        toast({
+            title: "Dados Gerados!",
+            description: `${numberOfOrders} pedidos de teste foram adicionados com sucesso.`,
+        });
+    } catch (error) {
+        console.error("Erro ao gerar dados de teste:", error);
+        toast({
+            title: "Erro",
+            description: "Não foi possível gerar os dados de teste.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
+
+  const loading = userLoading || restaurantLoading;
+  if (loading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-secondary/30">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
   if (!restaurantInfo) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-secondary/30 p-4">
@@ -115,8 +200,8 @@ export default function StaffDashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <Link href="/staff/orders" className="block transform hover:scale-105 transition-transform duration-300">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <Link href="/staff/orders" className="block transform hover:scale-105 transition-transform duration-300 md:col-span-1">
                 <Card className="h-full shadow-xl text-center">
                     <CardHeader>
                         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
@@ -130,7 +215,7 @@ export default function StaffDashboardPage() {
                 </Card>
             </Link>
             
-            <Link href="/staff/menu" className="block transform hover:scale-105 transition-transform duration-300">
+            <Link href="/staff/menu" className="block transform hover:scale-105 transition-transform duration-300 md:col-span-1">
                  <Card className="h-full shadow-xl text-center">
                     <CardHeader>
                          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
@@ -143,8 +228,43 @@ export default function StaffDashboardPage() {
                     </CardContent>
                 </Card>
             </Link>
+
+            <Link href="/staff/kpis" className="block transform hover:scale-105 transition-transform duration-300 md:col-span-1">
+                 <Card className="h-full shadow-xl text-center">
+                    <CardHeader>
+                         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
+                            <Bot className="h-10 w-10 text-primary" />
+                        </div>
+                        <CardTitle className="text-2xl font-headline">Visualizar KPIs</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <CardDescription>Visualize o faturamento diário e os itens mais vendidos.</CardDescription>
+                    </CardContent>
+                </Card>
+            </Link>
+
+            <Card className="md:col-span-3 transform hover:scale-105 transition-transform duration-300 shadow-xl text-center">
+                <CardHeader>
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
+                       <Bot className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl font-headline">Gerador de Dados de Teste</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <CardDescription className="mb-4">
+                      Cria pedidos concluídos aleatoriamente para popular os gráficos de KPIs e a lista de pedidos para fins de teste.
+                    </CardDescription>
+                    <Button onClick={generateMockOrders} disabled={isGenerating || menuLoading}>
+                      {isGenerating ? <Loader2 className="animate-spin mr-2"/> :  <Bot className="mr-2"/>}
+                      {isGenerating ? 'Gerando...' : 'Gerar Dados'}
+                    </Button>
+                </CardContent>
+            </Card>
+
         </div>
       </main>
     </div>
   );
 }
+
+    
