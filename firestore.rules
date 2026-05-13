@@ -1,0 +1,68 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // Deny all reads and writes by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Allow public read access to restaurant details and menus
+    match /restaurants/{restaurantId} {
+      allow get: if true;
+      
+      // Restaurant owners can create, update, and delete their own restaurant documents
+      allow write: if request.auth != null && request.auth.uid == resource.data.ownerUid;
+    }
+    
+    match /restaurants/{restaurantId}/menu/{menuItemId} {
+      allow list, get: if true;
+      
+      // Restaurant owners can manage their menu items
+      allow write: if request.auth != null && get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.ownerUid == request.auth.uid;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      // Any authenticated user can create their own profile
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // Users can only read and update their own profile
+      allow get, update: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // User's shopping cart
+    match /users/{userId}/cart/{cartItemId} {
+      // A user can read and write (create, update, delete) to their own cart.
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Orders
+    match /orders/{orderId} {
+        // Authenticated users can create their own orders
+        allow create: if request.auth != null && request.resource.data.customerUid == request.auth.uid;
+
+        // Users can read their own orders. Restaurant owners can read orders for their restaurant.
+        allow get: if request.auth != null && (request.auth.uid == resource.data.customerUid || get(/databases/$(database)/documents/restaurants/$(resource.data.restaurantId)).data.ownerUid == request.auth.uid);
+        
+        // Update permission logic
+        allow update: if request.auth != null && (
+            // Case 1: Restaurant owner updating status
+            (get(/databases/$(database)/documents/restaurants/$(resource.data.restaurantId)).data.ownerUid == request.auth.uid &&
+             request.resource.data.status != resource.data.status && // only status can be changed by owner
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
+            // Case 2: Customer submitting a review for a completed order
+            (request.auth.uid == resource.data.customerUid &&
+             resource.data.status == 'completed' &&
+             request.resource.data.rating != null &&
+             request.resource.data.diff(resource.data).affectedKeys().hasAll(['rating', 'review']))
+        );
+        
+        // Logged-in users can see a list of their own orders.
+        // Restaurant owners can see all orders for their restaurant.
+        allow list: if request.auth != null;
+    }
+  }
+}

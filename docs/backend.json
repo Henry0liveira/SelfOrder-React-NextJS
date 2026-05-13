@@ -1,0 +1,182 @@
+{
+  "entities": {
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "Represents a restaurant with its menu and details.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the restaurant."
+        },
+        "code": {
+          "type": "string",
+          "description": "A unique code for customers to access the menu."
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "The UID of the user who owns this restaurant."
+        }
+      },
+      "required": ["name", "code", "ownerUid"]
+    },
+    "MenuItem": {
+      "title": "Menu Item",
+      "description": "A single item on the restaurant's menu.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "category": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "imageHint": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "price", "category", "imageUrl"]
+    },
+     "CartItem": {
+      "title": "Cart Item",
+      "description": "Represents a menu item that has been added to a user's shopping cart.",
+      "type": "object",
+      "properties": {
+        "menuItemId": {
+          "type": "string",
+          "description": "The ID of the original menu item."
+        },
+        "name": {
+          "type": "string",
+          "description": "Denormalized name of the menu item for quick display."
+        },
+        "price": {
+          "type": "number",
+          "description": "Denormalized price of the menu item."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "How many of this item are in the cart."
+        },
+        "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Denormalized image URL for quick display."
+        }
+      },
+      "required": ["menuItemId", "name", "price", "quantity", "imageUrl"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer's order from a restaurant.",
+      "type": "object",
+      "properties": {
+        "restaurantId": {
+          "type": "string",
+          "description": "The ID of the restaurant where the order was placed."
+        },
+        "customerUid": {
+            "type": "string",
+            "description": "The UID of the customer who placed the order."
+        },
+        "customer": {
+            "type": "object",
+            "description": "Denormalized customer data for quick display.",
+            "properties": {
+                "name": {"type": "string"},
+                "email": {"type": "string", "format": "email"}
+            }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "menuItemId": {"type": "string"},
+              "name": {"type": "string"},
+              "quantity": {"type": "number"},
+              "price": {"type": "number"}
+            },
+            "required": ["menuItemId", "name", "quantity", "price"]
+          }
+        },
+        "total": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["new", "in-progress", "ready", "completed"]
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "rating": {
+            "type": "number",
+            "description": "Customer rating for the order, from 1 to 5."
+        },
+        "review": {
+            "type": "string",
+            "description": "A text review from the customer for the order."
+        }
+      },
+      "required": ["restaurantId", "customerUid", "items", "total", "status", "timestamp"]
+    },
+    "CustomerProfile": {
+      "title": "Customer Profile",
+      "description": "A customer's profile information.",
+      "type": "object",
+      "properties": {
+          "name": {"type": "string"},
+          "email": {"type": "string", "format": "email"}
+      },
+      "required": ["name", "email"]
+    }
+  },
+  "auth": {
+    "providers": ["password"],
+    "description": "Enable email and password authentication for users."
+  },
+  "firestore": {
+    "/restaurants/{restaurantId}": {
+      "schema": {
+        "$ref": "#/entities/Restaurant"
+      },
+      "description": "Stores information about each restaurant."
+    },
+    "/restaurants/{restaurantId}/menu": {
+      "schema": {
+        "$ref": "#/entities/MenuItem"
+      },
+      "description": "A subcollection storing the menu items for a restaurant."
+    },
+    "/orders": {
+      "schema": {
+        "$ref": "#/entities/Order"
+      },
+      "description": "A top-level collection of all orders across all restaurants."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/CustomerProfile"
+      },
+      "description": "Stores public profile information for all users (customers and restaurant owners)."
+    },
+    "/users/{userId}/cart/{cartItemId}": {
+        "schema": {
+            "$ref": "#/entities/CartItem"
+        },
+        "description": "A subcollection storing the items in a user's shopping cart."
+    }
+  }
+}
