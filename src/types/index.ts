@@ -15,6 +15,11 @@ export type AddonOption = {
   price: number;
 };
 
+export type SizeOption = {
+  name: string;
+  price: number;
+};
+
 export type MenuItem = {
   id: string; // Firestore document ID
   name: string;
@@ -24,6 +29,7 @@ export type MenuItem = {
   imageUrl: string;
   imageHint: string;
   ingredients?: Ingredient[]; // List of ingredients with quantities
+  sizes?: SizeOption[];
   addons?: AddonOption[];
 };
 
@@ -32,8 +38,8 @@ export type Restaurant = {
   name:string;
   code: string;
   ownerUid: string; // UID of the Firebase user who owns this restaurant
-  primary?: string; // hsl tokens e.g. "16 100% 65%"
-  secondary?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
   hours?: string; // freeform hours description
   deliveryEnabled?: boolean;
   pickupEnabled?: boolean;
@@ -52,6 +58,7 @@ export type FirestoreCartItem = {
     description?: string;
     category?: string;
     imageHint?: string;
+  selectedSize?: SizeOption;
     selectedAddons?: AddonOption[];
 };
 
@@ -61,6 +68,7 @@ export type CartItem = {
   id: string; // This is the cart item's document ID from Firestore
   menuItem: MenuItem;
   quantity: number;
+  selectedSize?: SizeOption;
   selectedAddons?: AddonOption[];
 };
 
@@ -70,6 +78,7 @@ export type OrderItem = {
   quantity: number;
   price: number;
   category?: string; // Category for analytics
+  selectedSize?: SizeOption;
   addons?: AddonOption[];
 };
 

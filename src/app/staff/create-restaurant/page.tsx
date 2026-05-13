@@ -20,50 +20,11 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { useAuth, useFirestore } from '@/firebase';
 
-function hexToHslTokens(hex: string) {
-  const parsed = hex.replace('#','');
-  const bigint = parseInt(parsed, 16);
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-
-  const rPct = r / 255;
-  const gPct = g / 255;
-  const bPct = b / 255;
-
-  const max = Math.max(rPct, gPct, bPct);
-  const min = Math.min(rPct, gPct, bPct);
-  let h = 0;
-  let s = 0;
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case rPct:
-        h = (gPct - bPct) / d + (gPct < bPct ? 6 : 0);
-        break;
-      case gPct:
-        h = (bPct - rPct) / d + 2;
-        break;
-      case bPct:
-        h = (rPct - gPct) / d + 4;
-        break;
-    }
-    h = h * 60;
-  }
-
-  return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-}
-
 export default function CreateRestaurantPage() {
   const [restaurantName, setRestaurantName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [primaryColor, setPrimaryColor] = useState('#ff7f50');
-  const [secondaryColor, setSecondaryColor] = useState('#ffe5b4');
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
@@ -92,15 +53,10 @@ export default function CreateRestaurantPage() {
       // Create a restaurant document in Firestore, using the user's UID as the document ID
       const restaurantDocRef = doc(firestore, 'restaurants', user.uid);
 
-      // convert hex colors to hsl tokens expected by Tailwind CSS vars
-      const primaryToken = hexToHslTokens(primaryColor || '#FF7F50');
-      const secondaryToken = hexToHslTokens(secondaryColor || '#FFE5B4');
       await setDoc(restaurantDocRef, {
         name: restaurantName,
         code: newRestaurantCode,
         ownerUid: user.uid,
-        primary: primaryToken,
-        secondary: secondaryToken,
       });
 
        // Create a user profile document
@@ -184,16 +140,6 @@ export default function CreateRestaurantPage() {
                 required
                 disabled={isLoading}
               />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="primaryColor">Cor Primária</Label>
-                <input id="primaryColor" type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-full h-10 p-1 rounded-md" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="secondaryColor">Cor Secundária</Label>
-                <input id="secondaryColor" type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-full h-10 p-1 rounded-md" />
-              </div>
             </div>
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading ? 'Criando...' : 'Criar Restaurante'}

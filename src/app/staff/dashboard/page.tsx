@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { LogOut, UtensilsCrossed, ClipboardList, BookOpen, QrCode, Loader2, Bot, AreaChart, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,7 +14,8 @@ import { useUser, useAuth, useCollection, useFirestore } from '@/firebase';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import type { Restaurant, MenuItem, Order, StockItem } from '@/types';
 import { signOut } from 'firebase/auth';
-import { collection, writeBatch, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, writeBatch, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import Image from 'next/image';
 
 
 // Define a mock customer type locally as it's only used here
@@ -42,6 +45,17 @@ export default function StaffDashboardPage() {
     user?.uid ? `restaurants/${user.uid}/stock` : ''
   );
 
+  const [logoUrl, setLogoUrl] = useState('');
+  const [bannerUrl, setBannerUrl] = useState('');
+  const [isSavingBranding, setIsSavingBranding] = useState(false);
+
+  useEffect(() => {
+    if (restaurantInfo) {
+      setLogoUrl(restaurantInfo.logoUrl || '');
+      setBannerUrl(restaurantInfo.bannerUrl || '');
+    }
+  }, [restaurantInfo]);
+
   useEffect(() => {
     if (!userLoading && !user) {
       router.push('/staff/login');
@@ -60,6 +74,39 @@ export default function StaffDashboardPage() {
         title: "Código Copiado!",
         description: `O código do restaurante "${restaurantInfo.code}" foi copiado.`,
       });
+    }
+  };
+
+  const readFileAsDataUrl = (file: File) => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleSaveBranding = async () => {
+    if (!restaurantInfo) return;
+    setIsSavingBranding(true);
+    try {
+      await updateDoc(doc(firestore, 'restaurants', restaurantInfo.id), {
+        logoUrl,
+        bannerUrl,
+      });
+      toast({
+        title: 'Identidade visual atualizada',
+        description: 'Logo e header foram salvos com sucesso.',
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar branding:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível salvar a logo e o header.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingBranding(false);
     }
   };
 
@@ -207,6 +254,86 @@ export default function StaffDashboardPage() {
               </Badge>
               <Button onClick={handleCopyToClipboard} variant="outline" size="sm">
                 <QrCode className="mr-2 h-4 w-4" /> Copiar Código
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="max-w-5xl mx-auto mb-8 shadow-lg">
+          <CardHeader>
+            <CardTitle>Identidade visual do restaurante</CardTitle>
+            <CardDescription>Altere a logo e a header desta unidade sem sair do painel.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <Label>Logo</Label>
+              <div className="grid gap-4 md:grid-cols-[120px,1fr] md:items-center">
+                <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-gray-100 bg-white mx-auto md:mx-0">
+                  {logoUrl ? (
+                    <Image src={logoUrl} alt="Logo do restaurante" fill className="object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-gray-400 text-center px-2">
+                      Sem logo
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        setLogoUrl(await readFileAsDataUrl(file));
+                      } catch {
+                        toast({ title: 'Erro', description: 'Não foi possível carregar a logo.', variant: 'destructive' });
+                      }
+                    }}
+                  />
+                  <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Ou cole uma URL de imagem" />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Header da página</Label>
+              <div className="space-y-3">
+                <div className="relative h-40 w-full overflow-hidden rounded-xl border border-gray-100 bg-white">
+                  {bannerUrl ? (
+                    <Image src={bannerUrl} alt="Header do restaurante" fill className="object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-gray-400 text-center px-4">
+                      Sem header
+                    </div>
+                  )}
+                </div>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      setBannerUrl(await readFileAsDataUrl(file));
+                    } catch {
+                      toast({ title: 'Erro', description: 'Não foi possível carregar o header.', variant: 'destructive' });
+                    }
+                  }}
+                />
+                <Input value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value)} placeholder="Ou cole uma URL de imagem" />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={() => {
+                setLogoUrl(restaurantInfo?.logoUrl || '');
+                setBannerUrl(restaurantInfo?.bannerUrl || '');
+              }} disabled={isSavingBranding}>
+                Descartar alterações
+              </Button>
+              <Button onClick={handleSaveBranding} disabled={isSavingBranding}>
+                {isSavingBranding ? 'Salvando...' : 'Salvar logo e header'}
               </Button>
             </div>
           </CardContent>

@@ -4,13 +4,13 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, runTransaction, writeBatch } from 'firebase/firestore';
-import type { MenuItem, CartItem, FirestoreCartItem, AddonOption } from '@/types';
+import type { MenuItem, CartItem, FirestoreCartItem, AddonOption, SizeOption } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface CartContextType {
   cartItems: CartItem[];
   loading: boolean;
-  addToCart: (item: MenuItem, selectedAddons?: AddonOption[]) => void;
+  addToCart: (item: MenuItem, selectedAddons?: AddonOption[], selectedSize?: SizeOption) => void;
   removeFromCart: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => Promise<void>;
@@ -30,8 +30,18 @@ const serializeAddons = (addons: AddonOption[] = []) =>
       .sort((a, b) => a.name.localeCompare(b.name))
   );
 
+const serializeSize = (size?: SizeOption) =>
+  size
+    ? JSON.stringify({
+        name: size.name.trim().toLowerCase(),
+        price: Number(size.price),
+      })
+    : '';
+
 const getAddonTotal = (addons: AddonOption[] = []) =>
   addons.reduce((total, addon) => total + Number(addon.price || 0), 0);
+
+const getItemBasePrice = (item: CartItem) => Number(item.selectedSize?.price ?? item.menuItem.price ?? 0);
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -69,11 +79,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         imageHint: item.imageHint || '',
       },
       quantity: item.quantity,
+      selectedSize: item.selectedSize,
       selectedAddons: item.selectedAddons || [],
     }));
   }, [firestoreCartItems]);
   
-  const addToCart = async (item: MenuItem, selectedAddons: AddonOption[] = []) => {
+  const addToCart = async (item: MenuItem, selectedAddons: AddonOption[] = [], selectedSize?: SizeOption) => {
     if (!user || !firestore) {
         toast({ title: "Erro", description: "Você precisa estar logado.", variant: "destructive" });
         return;
@@ -82,11 +93,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const cartCollectionRef = collection(firestore, `users/${user.uid}/cart`);
       const selectedAddonsKey = serializeAddons(selectedAddons);
+      const selectedSizeKey = serializeSize(selectedSize);
       
       // Transaction to check if item already exists
       await runTransaction(firestore, async (transaction) => {
         const existingCartItem = firestoreCartItems?.find(ci =>
-          ci.menuItemId === item.id && serializeAddons(ci.selectedAddons || []) === selectedAddonsKey
+          ci.menuItemId === item.id && serializeAddons(ci.selectedAddons || []) === selectedAddonsKey && serializeSize(ci.selectedSize) === selectedSizeKey
         );
 
         if (existingCartItem) {
@@ -99,10 +111,11 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             price: item.price,
             quantity: 1,
             imageUrl: item.imageUrl,
-            description: item.description,
-            category: item.category,
-            imageHint: item.imageHint,
-            selectedAddons,
+            description: item.description || '',
+            category: item.category || '',
+            imageHint: item.imageHint || '',
+            selectedSize: selectedSize || null as any,
+            selectedAddons: selectedAddons || [],
            };
            // In a transaction, we use the transaction's `set` or `add` method, but addDoc is not available.
            // So we create a new doc ref and set it.
@@ -153,7 +166,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const cartTotal = cartItems.reduce(
-    (total, item) => total + (item.menuItem.price + getAddonTotal(item.selectedAddons || [])) * item.quantity,
+    (total, item) => total + (getItemBasePrice(item) + getAddonTotal(item.selectedAddons || [])) * item.quantity,
     0
   );
 

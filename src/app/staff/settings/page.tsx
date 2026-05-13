@@ -12,66 +12,15 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import Image from 'next/image';
 
-function hexToHslTokens(hex: string) {
-  const parsed = hex.replace('#','');
-  const bigint = parseInt(parsed, 16);
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-
-  const rPct = r / 255;
-  const gPct = g / 255;
-  const bPct = b / 255;
-
-  const max = Math.max(rPct, gPct, bPct);
-  const min = Math.min(rPct, gPct, bPct);
-  let h = 0;
-  let s = 0;
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case rPct:
-        h = (gPct - bPct) / d + (gPct < bPct ? 6 : 0);
-        break;
-      case gPct:
-        h = (bPct - rPct) / d + 2;
-        break;
-      case bPct:
-        h = (rPct - gPct) / d + 4;
-        break;
-    }
-    h = h * 60;
-  }
-
-  return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-}
-
-function tokensToHex(token?: string) {
-  if (!token) return '#ff7f50';
-  const parts = token.split(' ').map(p => p.replace('%',''));
-  const h = parseFloat(parts[0]) || 16;
-  const s = (parseFloat(parts[1]) || 100) / 100;
-  const l = (parseFloat(parts[2]) || 65) / 100;
-
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = l - c/2;
-  let r=0,g=0,b=0;
-  if (0 <= h && h < 60) { r=c; g=x; b=0; }
-  else if (60 <= h && h < 120) { r=x; g=c; b=0; }
-  else if (120 <= h && h < 180) { r=0; g=c; b=x; }
-  else if (180 <= h && h < 240) { r=0; g=x; b=c; }
-  else if (240 <= h && h < 300) { r=x; g=0; b=c; }
-  else { r=c; g=0; b=x; }
-
-  const R = Math.round((r + m) * 255);
-  const G = Math.round((g + m) * 255);
-  const B = Math.round((b + m) * 255);
-  return `#${((1<<24) + (R<<16) + (G<<8) + B).toString(16).slice(1)}`;
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function StaffSettingsPage() {
@@ -83,8 +32,8 @@ export default function StaffSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [hours, setHours] = useState('');
-  const [primary, setPrimary] = useState('#ff7f50');
-  const [secondary, setSecondary] = useState('#ffe5b4');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [bannerUrl, setBannerUrl] = useState('');
   const [deliveryEnabled, setDeliveryEnabled] = useState(true);
   const [pickupEnabled, setPickupEnabled] = useState(true);
 
@@ -98,8 +47,8 @@ export default function StaffSettingsPage() {
         if (data) {
           setName(data.name || '');
           setHours(data.hours || '');
-          setPrimary(tokensToHex(data.primary));
-          setSecondary(tokensToHex(data.secondary));
+          setLogoUrl(data.logoUrl || '');
+          setBannerUrl(data.bannerUrl || '');
           setDeliveryEnabled(data.deliveryEnabled ?? true);
           setPickupEnabled(data.pickupEnabled ?? true);
         }
@@ -121,8 +70,8 @@ export default function StaffSettingsPage() {
       await updateDoc(ref, {
         name,
         hours,
-        primary: hexToHslTokens(primary),
-        secondary: hexToHslTokens(secondary),
+        logoUrl,
+        bannerUrl,
         deliveryEnabled,
         pickupEnabled,
       });
@@ -156,14 +105,65 @@ export default function StaffSettingsPage() {
                 <Textarea value={hours} onChange={(e) => setHours(e.target.value)} placeholder="Ex: Seg-Sex 09:00-18:00\nSáb 09:00-14:00" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4 items-end">
+              <div className="space-y-4">
                 <div>
-                  <Label>Cor Primária</Label>
-                  <input type="color" value={primary} onChange={(e) => setPrimary(e.target.value)} className="w-full h-10 rounded-md" />
+                  <Label>Logo do Restaurante</Label>
+                  <div className="mt-2 grid gap-3 sm:grid-cols-[120px,1fr] sm:items-center">
+                    <div className="relative h-24 w-24 overflow-hidden rounded-xl border bg-muted mx-auto sm:mx-0">
+                      {logoUrl ? (
+                        <Image src={logoUrl} alt="Logo do restaurante" fill className="object-cover" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-muted-foreground text-center px-2">
+                          Sem logo
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            setLogoUrl(await readFileAsDataUrl(file));
+                          } catch {
+                            toast({ title: 'Erro', description: 'Não foi possível carregar a logo.', variant: 'destructive' });
+                          }
+                        }}
+                      />
+                      <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Ou cole uma URL de imagem para a logo" />
+                    </div>
+                  </div>
                 </div>
+
                 <div>
-                  <Label>Cor Secundária</Label>
-                  <input type="color" value={secondary} onChange={(e) => setSecondary(e.target.value)} className="w-full h-10 rounded-md" />
+                  <Label>Header / Capa do Restaurante</Label>
+                  <div className="mt-2 space-y-3">
+                    <div className="relative h-36 w-full overflow-hidden rounded-xl border bg-muted">
+                      {bannerUrl ? (
+                        <Image src={bannerUrl} alt="Header do restaurante" fill className="object-cover" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-sm text-muted-foreground text-center px-4">
+                          Sem header
+                        </div>
+                      )}
+                    </div>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          setBannerUrl(await readFileAsDataUrl(file));
+                        } catch {
+                          toast({ title: 'Erro', description: 'Não foi possível carregar o header.', variant: 'destructive' });
+                        }
+                      }}
+                    />
+                    <Input value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value)} placeholder="Ou cole uma URL de imagem para o header" />
+                  </div>
                 </div>
               </div>
 

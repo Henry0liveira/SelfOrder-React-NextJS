@@ -127,6 +127,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
           quantity: ci.quantity,
           price: ci.menuItem.price,
           category: ci.menuItem.category,
+          selectedSize: ci.selectedSize,
           addons: ci.selectedAddons || [],
       })),
       total: cartTotal,
@@ -265,11 +266,9 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
   if (pathname.includes('/login') || pathname.includes('/signup') || pathname.includes('/confirmation') || pathname.includes('/not-found') || !restaurant) {
       return <>{children}</>;
   }
-    const themeStyle = restaurant ? ({ ['--primary']: restaurant.primary || '16 100% 65%', ['--secondary']: restaurant.secondary || '35 100% 90%' }) : undefined;
-
     return (
     <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
-      <div className="min-h-screen bg-background pb-24" style={themeStyle as React.CSSProperties}>
+        <div className="min-h-screen bg-background pb-24">
         <header className="bg-card border-b sticky top-0 z-40">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
             <Link href={`/${restaurantCode}`} className="flex items-center gap-2">
@@ -365,10 +364,17 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
                           <Image src={cartItem.menuItem.imageUrl} alt={cartItem.menuItem.name} width={64} height={64} className="rounded-md object-cover"/>
                           <div className="flex-grow">
                               <p className="font-semibold">{cartItem.menuItem.name}</p>
-                              <p className="text-sm text-muted-foreground">R${cartItem.menuItem.price.toFixed(2)}</p>
+                              <p className="text-sm text-muted-foreground">
+                                R${(cartItem.selectedSize?.price ?? cartItem.menuItem.price).toFixed(2)}
+                              </p>
                           {cartItem.selectedAddons && cartItem.selectedAddons.length > 0 && (
                             <p className="text-xs text-muted-foreground mt-1">
                               Adicionais: {cartItem.selectedAddons.map((addon) => addon.name).join(', ')}
+                            </p>
+                          )}
+                          {cartItem.selectedSize && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Tamanho: {cartItem.selectedSize.name}
                             </p>
                           )}
                               <div className="flex items-center gap-2 mt-1">

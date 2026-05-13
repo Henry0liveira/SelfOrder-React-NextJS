@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { MEASUREMENT_UNIT_OPTIONS } from '@/lib/measurement';
 import { Switch } from '@/components/ui/switch';
-import type { AddonOption } from '@/types';
+import type { AddonOption, SizeOption } from '@/types';
 
 export default function AddMenuItemPage() {
   const router = useRouter();
@@ -33,6 +33,9 @@ export default function AddMenuItemPage() {
   const [category, setCategory] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [sizesEnabled, setSizesEnabled] = useState(false);
+  const [sizes, setSizes] = useState<SizeOption[]>([]);
+  const [newSize, setNewSize] = useState<SizeOption>({ name: '', price: 0 });
   const [addonsEnabled, setAddonsEnabled] = useState(false);
   const [addons, setAddons] = useState<AddonOption[]>([]);
   const [newIngredient, setNewIngredient] = useState<Ingredient>({ name: '', quantity: 0, unit: 'g' });
@@ -45,6 +48,22 @@ export default function AddMenuItemPage() {
     }
     setIngredients([...ingredients, { ...newIngredient }]);
     setNewIngredient({ name: '', quantity: 0, unit: 'g' });
+  };
+
+  const handleAddSize = () => {
+    if (!newSize.name.trim() || newSize.price <= 0) {
+      toast({ title: 'Tamanho inválido', description: 'Preencha o nome e o preço.', variant: 'destructive' });
+      return;
+    }
+    setSizes([...sizes, { ...newSize }]);
+    setNewSize({ name: '', price: 0 });
+    setSizesEnabled(true);
+  };
+
+  const handleRemoveSize = (index: number) => {
+    const updated = [...sizes];
+    updated.splice(index, 1);
+    setSizes(updated);
   };
 
   const handleRemoveIngredient = (index: number) => {
@@ -97,6 +116,7 @@ export default function AddMenuItemPage() {
             imageUrl,
             imageHint: name.toLowerCase(),
             ingredients: ingredients,
+            sizes: sizesEnabled ? sizes : [],
             addons: addonsEnabled ? addons : [],
             createdAt: serverTimestamp()
         });
@@ -170,6 +190,14 @@ export default function AddMenuItemPage() {
                 <Switch checked={addonsEnabled} onCheckedChange={setAddonsEnabled} disabled={isLoading} />
               </div>
 
+              <div className="flex items-center justify-between gap-3 rounded-lg border p-3 mb-4 bg-muted/20">
+                <div>
+                  <p className="text-sm font-medium">Este prato possui tamanhos?</p>
+                  <p className="text-xs text-muted-foreground">Ex.: pequeno, médio e grande com preços diferentes.</p>
+                </div>
+                <Switch checked={sizesEnabled} onCheckedChange={setSizesEnabled} disabled={isLoading} />
+              </div>
+
               {/* Existing ingredients */}
               {ingredients.length > 0 && (
                 <div className="space-y-2 mb-4">
@@ -228,6 +256,65 @@ export default function AddMenuItemPage() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+
+              {sizesEnabled && (
+                <div className="mt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Label className="text-base font-semibold">Tamanhos</Label>
+                    <span className="text-xs text-muted-foreground">opcional</span>
+                  </div>
+
+                  {sizes.length > 0 && (
+                    <div className="space-y-2 mb-4">
+                      {sizes.map((size, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                          <span className="flex-1 text-sm font-medium">{size.name}</span>
+                          <Badge variant="secondary">R$ {size.price.toFixed(2)}</Badge>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={() => handleRemoveSize(index)}
+                            disabled={isLoading}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 p-2 border-2 border-dashed border-muted rounded-lg">
+                    <Input
+                      value={newSize.name}
+                      onChange={(e) => setNewSize({ ...newSize, name: e.target.value })}
+                      placeholder="Ex: Pequeno, Médio, Grande"
+                      className="flex-1 h-9 text-sm"
+                      disabled={isLoading}
+                    />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newSize.price || ''}
+                      onChange={(e) => setNewSize({ ...newSize, price: parseFloat(e.target.value) || 0 })}
+                      placeholder="R$"
+                      className="w-24 h-9 text-sm"
+                      disabled={isLoading}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9"
+                      onClick={handleAddSize}
+                      disabled={isLoading}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {addonsEnabled && (
                 <div className="mt-6">
