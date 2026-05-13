@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 interface CartContextType {
   cartItems: CartItem[];
   loading: boolean;
-  addToCart: (item: MenuItem, selectedAddons?: AddonOption[], selectedSize?: SizeOption) => void;
+  addToCart: (item: MenuItem, selectedAddons?: AddonOption[], selectedSize?: SizeOption, observation?: string) => void;
   removeFromCart: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => Promise<void>;
@@ -37,6 +37,8 @@ const serializeSize = (size?: SizeOption) =>
         price: Number(size.price),
       })
     : '';
+
+const serializeObservation = (observation?: string) => observation?.trim().toLowerCase() ?? '';
 
 const getAddonTotal = (addons: AddonOption[] = []) =>
   addons.reduce((total, addon) => total + Number(addon.price || 0), 0);
@@ -81,10 +83,11 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       quantity: item.quantity,
       selectedSize: item.selectedSize,
       selectedAddons: item.selectedAddons || [],
+      observation: item.observation || '',
     }));
   }, [firestoreCartItems]);
   
-  const addToCart = async (item: MenuItem, selectedAddons: AddonOption[] = [], selectedSize?: SizeOption) => {
+  const addToCart = async (item: MenuItem, selectedAddons: AddonOption[] = [], selectedSize?: SizeOption, observation = '') => {
     if (!user || !firestore) {
         toast({ title: "Erro", description: "Você precisa estar logado.", variant: "destructive" });
         return;
@@ -94,11 +97,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       const cartCollectionRef = collection(firestore, `users/${user.uid}/cart`);
       const selectedAddonsKey = serializeAddons(selectedAddons);
       const selectedSizeKey = serializeSize(selectedSize);
+      const observationKey = serializeObservation(observation);
       
       // Transaction to check if item already exists
       await runTransaction(firestore, async (transaction) => {
         const existingCartItem = firestoreCartItems?.find(ci =>
-          ci.menuItemId === item.id && serializeAddons(ci.selectedAddons || []) === selectedAddonsKey && serializeSize(ci.selectedSize) === selectedSizeKey
+          ci.menuItemId === item.id && serializeAddons(ci.selectedAddons || []) === selectedAddonsKey && serializeSize(ci.selectedSize) === selectedSizeKey && serializeObservation(ci.observation) === observationKey
         );
 
         if (existingCartItem) {
@@ -116,6 +120,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             imageHint: item.imageHint || '',
             selectedSize: selectedSize || null as any,
             selectedAddons: selectedAddons || [],
+            observation: observation.trim(),
            };
            // In a transaction, we use the transaction's `set` or `add` method, but addDoc is not available.
            // So we create a new doc ref and set it.

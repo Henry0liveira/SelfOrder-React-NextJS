@@ -23,6 +23,18 @@ const statusStyles: Record<string, string> = {
   completed: 'bg-gray-100 text-gray-800',
 };
 
+const getTimestampMillis = (timestamp: Order['timestamp']) => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toMillis();
+  }
+
+  if (timestamp && typeof timestamp === 'object' && 'toMillis' in timestamp && typeof timestamp.toMillis === 'function') {
+    return timestamp.toMillis();
+  }
+
+  return 0;
+};
+
 export default function CustomerOrdersPage() {
   const params = useParams();
   const restaurantCode = params.restaurantCode as string;
@@ -44,7 +56,7 @@ export default function CustomerOrdersPage() {
   const loading = userLoading || restaurantLoading || ordersLoading;
 
   const sortedOrders = orders?.sort(
-    (a, b) => b.timestamp.toMillis() - a.timestamp.toMillis()
+    (a, b) => getTimestampMillis(b.timestamp) - getTimestampMillis(a.timestamp)
   );
 
   return (

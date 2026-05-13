@@ -14,6 +14,18 @@ import { useUser, useAuth, useCollectionQuery } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 
+const getTimestampMillis = (timestamp: Order['timestamp']) => {
+  if (timestamp && typeof timestamp === 'object' && 'toMillis' in timestamp) {
+    const timestampWithMillis = timestamp as { toMillis?: () => number };
+
+    if (typeof timestampWithMillis.toMillis === 'function') {
+      return timestampWithMillis.toMillis();
+    }
+  }
+
+  return 0;
+};
+
 export default function StaffOrdersPage() {
   const router = useRouter();
   const auth = useAuth();
@@ -77,7 +89,7 @@ export default function StaffOrdersPage() {
 
     const filteredOrders = orders
         .filter(order => order.status === status)
-        .sort((a,b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+      .sort((a,b) => getTimestampMillis(b.timestamp) - getTimestampMillis(a.timestamp));
     
     if (filteredOrders.length === 0) {
       return (

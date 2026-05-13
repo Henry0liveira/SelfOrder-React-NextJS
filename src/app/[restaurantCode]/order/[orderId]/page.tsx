@@ -166,6 +166,25 @@ export default function OrderStatusPage() {
                         </li>
                     ))}
                 </ul>
+                {order.items.some((item) => item.observation) && (
+                  <div className="mt-4 space-y-3">
+                    <Separator />
+                    {order.items.map((item, index) => (
+                      item.observation ? (
+                        <div key={`${item.menuItemId}-${index}-observation`} className="rounded-2xl bg-muted/50 p-3 text-sm">
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-muted-foreground">Obs.: {item.observation}</p>
+                        </div>
+                      ) : null
+                    ))}
+                  </div>
+                )}
+                {order.customerNote && (
+                  <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                    <p className="text-sm font-semibold text-primary">Observação do pedido</p>
+                    <p className="text-sm text-muted-foreground">{order.customerNote}</p>
+                  </div>
+                )}
                 <Separator className="my-3" />
                  <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>

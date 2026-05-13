@@ -30,24 +30,26 @@ function Rating({ rating, className }: { rating: number, className?: string }) {
   );
 }
 
+const getTimestampLabel = (timestamp: Order['timestamp']) => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  if (timestamp && typeof timestamp === 'object' && 'toDate' in timestamp && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  return 'No time';
+};
+
 export function OrderCard({ order, onStatusChange }: OrderCardProps) {
-    const getTimestamp = () => {
-        if (!order.timestamp) return 'No time';
-        if (order.timestamp instanceof Timestamp) {
-            return order.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        // Fallback for cases where it might be a string or number from older data
-        return new Date(order.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-
   return (
     <Card className="transition-all hover:shadow-md">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div>
             <CardTitle className="text-lg font-bold">Pedido #{order.id.substring(0, 6)}</CardTitle>
             <CardDescription className="flex items-center gap-2 text-xs">
-                <span>{getTimestamp()}</span>
+                <span>{getTimestampLabel(order.timestamp)}</span>
                 {order.customer?.name && (
                     <>
                         <Separator orientation="vertical" className="h-4" />
@@ -67,12 +69,28 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
         <Separator className="my-4" />
         <ul className="space-y-2 text-sm">
           {order.items.map((item, index) => (
-            <li key={`${item.menuItemId}-${index}`} className="flex justify-between">
-              <span>{item.quantity}x {item.name}</span>
-              <span className="font-mono">${(item.price * item.quantity).toFixed(2)}</span>
+            <li key={`${item.menuItemId}-${index}`} className="space-y-1 rounded-xl border border-border/60 p-3">
+              <div className="flex justify-between gap-3">
+                <span>{item.quantity}x {item.name}</span>
+                <span className="font-mono">${(item.price * item.quantity).toFixed(2)}</span>
+              </div>
+              {(item.selectedSize || item.addons?.length || item.observation) && (
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  {item.selectedSize && <p>Tamanho: {item.selectedSize.name}</p>}
+                  {item.addons && item.addons.length > 0 && <p>Adicionais: {item.addons.map((addon) => addon.name).join(', ')}</p>}
+                  {item.observation && <p>Obs.: {item.observation}</p>}
+                </div>
+              )}
             </li>
           ))}
         </ul>
+
+        {order.customerNote && (
+          <div className="mt-4 rounded-xl bg-muted/60 p-3 text-sm">
+            <p className="font-medium text-foreground">Observação do pedido</p>
+            <p className="text-muted-foreground">{order.customerNote}</p>
+          </div>
+        )}
 
         {order.review && (
             <div className="mt-4">

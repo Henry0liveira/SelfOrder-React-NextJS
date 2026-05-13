@@ -40,7 +40,7 @@ export default function ManageMenuPage() {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [newIngredient, setNewIngredient] = useState<Ingredient>({ name: '', quantity: 0, unit: 'g' });
-  const [newAddon, setNewAddon] = useState<AddonOption>({ name: '', quantity: 0, unit: 'g', price: 0 });
+  const [newAddon, setNewAddon] = useState<AddonOption>({ name: '', quantity: 0, unit: 'g', price: 0, category: '' });
   const [addonsEnabled, setAddonsEnabled] = useState(false);
 
   const loading = userLoading || restaurantLoading || menuLoading;
@@ -71,7 +71,7 @@ export default function ManageMenuPage() {
       ...selectedItem,
       addons: [...(selectedItem.addons || []), { ...newAddon }],
     });
-    setNewAddon({ name: '', quantity: 0, unit: 'g', price: 0 });
+    setNewAddon({ name: '', quantity: 0, unit: 'g', price: 0, category: '' });
     setAddonsEnabled(true);
   };
 
@@ -396,6 +396,133 @@ export default function ManageMenuPage() {
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
+
+                      {addonsEnabled && (
+                        <div className="mt-6">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Label className="text-base font-semibold">Adicionais do prato</Label>
+                            <span className="text-xs text-muted-foreground">opcional</span>
+                          </div>
+
+                          {selectedItem.addons && selectedItem.addons.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                              {selectedItem.addons.map((addon, index) => (
+                                <div key={index} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                                  <Input
+                                    value={addon.name}
+                                    onChange={(e) => {
+                                      const updated = [...(selectedItem.addons || [])];
+                                      updated[index] = { ...updated[index], name: e.target.value };
+                                      setSelectedItem({ ...selectedItem, addons: updated });
+                                    }}
+                                    placeholder="Nome do adicional"
+                                    className="flex-1 h-8 text-sm"
+                                  />
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={addon.price}
+                                    onChange={(e) => {
+                                      const updated = [...(selectedItem.addons || [])];
+                                      updated[index] = { ...updated[index], price: parseFloat(e.target.value) || 0 };
+                                      setSelectedItem({ ...selectedItem, addons: updated });
+                                    }}
+                                    placeholder="R$"
+                                    className="w-24 h-8 text-sm"
+                                  />
+                                  <Input
+                                    type="number"
+                                    value={addon.quantity}
+                                    onChange={(e) => {
+                                      const updated = [...(selectedItem.addons || [])];
+                                      updated[index] = { ...updated[index], quantity: parseFloat(e.target.value) || 0 };
+                                      setSelectedItem({ ...selectedItem, addons: updated });
+                                    }}
+                                    placeholder="Qtd"
+                                    className="w-20 h-8 text-sm"
+                                  />
+                                  <Input
+                                    value={addon.category || ''}
+                                    onChange={(e) => {
+                                      const updated = [...(selectedItem.addons || [])];
+                                      updated[index] = { ...updated[index], category: e.target.value };
+                                      setSelectedItem({ ...selectedItem, addons: updated });
+                                    }}
+                                    placeholder="Categoria (opcional)"
+                                    className="w-36 h-8 text-sm"
+                                  />
+                                  <select
+                                    value={addon.unit}
+                                    onChange={(e) => {
+                                      const updated = [...(selectedItem.addons || [])];
+                                      updated[index] = { ...updated[index], unit: e.target.value };
+                                      setSelectedItem({ ...selectedItem, addons: updated });
+                                    }}
+                                    className="h-8 text-sm border border-input rounded-md px-2 bg-background"
+                                  >
+                                    {MEASUREMENT_UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                                  </select>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    onClick={() => handleRemoveAddon(index)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2 p-2 border-2 border-dashed border-muted rounded-lg">
+                            <Input
+                              value={newAddon.name}
+                              onChange={(e) => setNewAddon({ ...newAddon, name: e.target.value })}
+                              placeholder="Nome do adicional..."
+                              className="flex-1 h-8 text-sm"
+                            />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={newAddon.price || ''}
+                              onChange={(e) => setNewAddon({ ...newAddon, price: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$"
+                              className="w-20 h-8 text-sm"
+                            />
+                            <Input
+                              type="number"
+                              value={newAddon.quantity || ''}
+                              onChange={(e) => setNewAddon({ ...newAddon, quantity: parseFloat(e.target.value) || 0 })}
+                              placeholder="Qtd"
+                              className="w-20 h-8 text-sm"
+                            />
+                            <Input
+                              value={newAddon.category || ''}
+                              onChange={(e) => setNewAddon({ ...newAddon, category: e.target.value })}
+                              placeholder="Categoria (opcional)"
+                              className="w-36 h-8 text-sm"
+                            />
+                            <select
+                              value={newAddon.unit}
+                              onChange={(e) => setNewAddon({ ...newAddon, unit: e.target.value })}
+                              className="h-8 text-sm border border-input rounded-md px-2 bg-background"
+                            >
+                              {MEASUREMENT_UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                            </select>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={handleAddAddon}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                 </div>
                 <DialogFooter>

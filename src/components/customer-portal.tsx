@@ -61,7 +61,7 @@ export default function CustomerPortal() {
   };
 
   return (
-    <form onSubmit={handleFindMenu} className="space-y-4">
+    <form onSubmit={handleFindMenu} className="flex h-full flex-col justify-between gap-4">
       <div className="relative">
         <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input

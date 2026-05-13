@@ -39,7 +39,7 @@ export default function AddMenuItemPage() {
   const [addonsEnabled, setAddonsEnabled] = useState(false);
   const [addons, setAddons] = useState<AddonOption[]>([]);
   const [newIngredient, setNewIngredient] = useState<Ingredient>({ name: '', quantity: 0, unit: 'g' });
-  const [newAddon, setNewAddon] = useState<AddonOption>({ name: '', quantity: 0, unit: 'g', price: 0 });
+  const [newAddon, setNewAddon] = useState<AddonOption>({ name: '', quantity: 0, unit: 'g', price: 0, category: '' });
 
   const handleAddIngredient = () => {
     if (!newIngredient.name.trim() || newIngredient.quantity <= 0) {
@@ -79,7 +79,7 @@ export default function AddMenuItemPage() {
     }
 
     setAddons([...addons, { ...newAddon }]);
-    setNewAddon({ name: '', quantity: 0, unit: 'g', price: 0 });
+    setNewAddon({ name: '', quantity: 0, unit: 'g', price: 0, category: '' });
     setAddonsEnabled(true);
   };
 
@@ -368,6 +368,13 @@ export default function AddMenuItemPage() {
                       onChange={(e) => setNewAddon({ ...newAddon, quantity: parseFloat(e.target.value) || 0 })}
                       placeholder="Qtd"
                       className="w-20 h-9 text-sm"
+                      disabled={isLoading}
+                    />
+                    <Input
+                      value={newAddon.category || ''}
+                      onChange={(e) => setNewAddon({ ...newAddon, category: e.target.value })}
+                      placeholder="Categoria (opcional)"
+                      className="w-36 h-9 text-sm"
                       disabled={isLoading}
                     />
                     <select

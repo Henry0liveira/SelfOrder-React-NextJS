@@ -72,6 +72,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
   const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery'>('pickup');
   const [address, setAddress] = useState('');
   const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [orderNote, setOrderNote] = useState('');
 
   useEffect(() => {
     // Redirect to login if not authenticated and not on auth pages
@@ -129,10 +130,12 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
           category: ci.menuItem.category,
           selectedSize: ci.selectedSize,
           addons: ci.selectedAddons || [],
+            observation: ci.observation,
       })),
       total: cartTotal,
       status: 'new' as const,
       timestamp: serverTimestamp(),
+          customerNote: orderNote.trim() || undefined,
     };
 
     try {
@@ -245,6 +248,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
         });
         
         setIsCartOpen(false); // Close the sheet
+        setOrderNote('');
         router.push(`/${restaurantCode}/confirmation`);
 
     } catch (error) {
@@ -268,9 +272,19 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
   }
     return (
     <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
-        <div className="min-h-screen bg-background pb-24">
-        <header className="bg-card border-b sticky top-0 z-40">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+        <div className="relative min-h-screen overflow-hidden bg-[#e5f8d6] pb-24">
+          <div className="absolute inset-0 -z-20">
+            <Image
+              src="/516e33fc-cdf5-4c05-928b-a1e0529dbaab.png"
+              alt="Padrão de fundo verde"
+              fill
+              priority
+              className="object-cover opacity-35"
+            />
+          </div>
+          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/65 via-white/70 to-[#eef9e3]/90" />
+        <header className="sticky top-0 z-40 border-b border-white/60 bg-white/75 backdrop-blur-xl">
+          <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
             <Link href={`/${restaurantCode}`} className="flex items-center gap-2">
               <UtensilsCrossed className="h-6 w-6 text-primary" />
               <h1 className="text-xl font-bold font-headline">{restaurant.name}</h1>
@@ -290,7 +304,7 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
             {children}
         </main>
         
-        <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg z-50">
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/60 bg-white/85 shadow-[0_-12px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-3 items-center h-16">
               <Link href={`/${restaurantCode}`} className={`flex flex-col items-center justify-center gap-1 text-muted-foreground ${pathname === `/${restaurantCode}` ? 'text-primary' : ''}`}>
@@ -319,22 +333,22 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-       <SheetContent className="flex flex-col">
+       <SheetContent className="flex w-[100vw] flex-col bg-white/95 backdrop-blur-xl sm:max-w-xl lg:max-w-2xl">
           <SheetHeader>
               <SheetTitle className="text-2xl font-headline">Seu Pedido</SheetTitle>
           </SheetHeader>
-          <div className="p-4">
-            <div className="flex items-center gap-4">
-              <label className={`px-3 py-2 rounded-md cursor-pointer ${deliveryType === 'pickup' ? 'bg-muted/50' : ''}`}>
-                <input type="radio" name="delivery" value="pickup" checked={deliveryType === 'pickup'} onChange={() => setDeliveryType('pickup')} className="mr-2" /> Retirar
+          <div className="space-y-4 p-4">
+            <div className="grid grid-cols-2 gap-3">
+              <label className={`cursor-pointer rounded-2xl border px-3 py-3 text-sm font-medium transition-colors ${deliveryType === 'pickup' ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 bg-white'}`}>
+                <input type="radio" name="delivery" value="pickup" checked={deliveryType === 'pickup'} onChange={() => setDeliveryType('pickup')} className="mr-2 accent-primary" /> Retirar
               </label>
-              <label className={`px-3 py-2 rounded-md cursor-pointer ${deliveryType === 'delivery' ? 'bg-muted/50' : ''}`}>
-                <input type="radio" name="delivery" value="delivery" checked={deliveryType === 'delivery'} onChange={() => setDeliveryType('delivery')} className="mr-2" /> Entrega
+              <label className={`cursor-pointer rounded-2xl border px-3 py-3 text-sm font-medium transition-colors ${deliveryType === 'delivery' ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 bg-white'}`}>
+                <input type="radio" name="delivery" value="delivery" checked={deliveryType === 'delivery'} onChange={() => setDeliveryType('delivery')} className="mr-2 accent-primary" /> Entrega
               </label>
             </div>
 
             {deliveryType === 'delivery' && (
-              <div className="mt-3">
+              <div className="space-y-2 rounded-2xl border border-gray-200 bg-white p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">Endereço de entrega</p>
                   <Button variant="ghost" size="sm" onClick={() => setIsEditingAddress(true)}>{address ? 'Editar' : 'Adicionar'}</Button>
@@ -355,41 +369,61 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
                 )}
               </div>
             )}
+
+            <div className="space-y-2 rounded-2xl border border-gray-200 bg-white p-4">
+              <p className="text-sm font-medium">Observações do pedido</p>
+              <p className="text-xs text-muted-foreground">Ex.: sem talheres, enviar molho à parte ou orientar a cozinha.</p>
+              <Textarea
+                value={orderNote}
+                onChange={(e) => setOrderNote(e.target.value)}
+                placeholder="Escreva uma observação geral para o pedido"
+                className="min-h-[96px] resize-none rounded-2xl"
+              />
+            </div>
           </div>
           <Separator />
           {cartItems.length > 0 ? (
               <div className="flex-grow overflow-y-auto -mx-6 px-6 my-4 space-y-4">
                   {cartItems.map(cartItem => (
-                      <div key={cartItem.id} className="flex items-center gap-4">
-                          <Image src={cartItem.menuItem.imageUrl} alt={cartItem.menuItem.name} width={64} height={64} className="rounded-md object-cover"/>
-                          <div className="flex-grow">
-                              <p className="font-semibold">{cartItem.menuItem.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                R${(cartItem.selectedSize?.price ?? cartItem.menuItem.price).toFixed(2)}
-                              </p>
+                      <div key={cartItem.id} className="flex gap-4 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+                          <Image src={cartItem.menuItem.imageUrl} alt={cartItem.menuItem.name} width={72} height={72} className="h-18 w-18 rounded-2xl object-cover"/>
+                          <div className="min-w-0 flex-grow">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="font-semibold leading-tight">{cartItem.menuItem.name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    R${(cartItem.selectedSize?.price ?? cartItem.menuItem.price).toFixed(2)}
+                                  </p>
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={() => removeFromCart(cartItem.id)} aria-label="Remove item" className="h-8 w-8 shrink-0">
+                                    <Trash2 className="h-4 w-4 text-destructive"/>
+                                </Button>
+                              </div>
                           {cartItem.selectedAddons && cartItem.selectedAddons.length > 0 && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="mt-1 text-xs text-muted-foreground">
                               Adicionais: {cartItem.selectedAddons.map((addon) => addon.name).join(', ')}
                             </p>
                           )}
                           {cartItem.selectedSize && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="mt-1 text-xs text-muted-foreground">
                               Tamanho: {cartItem.selectedSize.name}
                             </p>
                           )}
-                              <div className="flex items-center gap-2 mt-1">
-                                  <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)}>
+                          {cartItem.observation && (
+                            <p className="mt-1 text-xs text-foreground/80">
+                              Obs.: {cartItem.observation}
+                            </p>
+                          )}
+                              <div className="mt-2 flex items-center gap-2">
+                                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)}>
                                       <MinusCircle className="h-4 w-4"/>
                                   </Button>
-                                  <span className="w-4 text-center">{cartItem.quantity}</span>
-                                  <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}>
+                                  <span className="w-6 text-center text-sm font-semibold">{cartItem.quantity}</span>
+                                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}>
                                       <PlusCircle className="h-4 w-4"/>
                                   </Button>
                               </div>
                           </div>
-                          <Button variant="ghost" size="icon" onClick={() => removeFromCart(cartItem.id)} aria-label="Remove item">
-                              <Trash2 className="h-5 w-5 text-destructive"/>
-                          </Button>
                       </div>
                   ))}
               </div>
@@ -401,11 +435,11 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
               </div>
           )}
           <Separator />
-          <SheetFooter className="mt-auto pt-4 sm:justify-between">
+          <SheetFooter className="mt-auto gap-3 pt-4 sm:flex-row sm:justify-between">
                 <div className="text-lg font-bold">
                   Total: <span className="text-primary">R${cartTotal.toFixed(2)}</span>
               </div>
-              <Button className="w-full sm:w-auto" onClick={handlePlaceOrder} disabled={cartItems.length === 0}>
+              <Button className="w-full rounded-full sm:w-auto" onClick={handlePlaceOrder} disabled={cartItems.length === 0}>
                   Finalizar Pedido <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
           </SheetFooter>

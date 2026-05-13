@@ -1,6 +1,6 @@
 
 
-import { Timestamp } from "firebase/firestore";
+import { Timestamp, type FieldValue } from "firebase/firestore";
 
 export type Ingredient = {
   name: string;
@@ -13,6 +13,7 @@ export type AddonOption = {
   quantity: number;
   unit: string;
   price: number;
+  category?: string; // e.g. 'Tamanho', 'Bebidas', 'Extras'
 };
 
 export type SizeOption = {
@@ -31,6 +32,7 @@ export type MenuItem = {
   ingredients?: Ingredient[]; // List of ingredients with quantities
   sizes?: SizeOption[];
   addons?: AddonOption[];
+  promoted?: boolean;
 };
 
 export type Restaurant = {
@@ -43,6 +45,11 @@ export type Restaurant = {
   hours?: string; // freeform hours description
   deliveryEnabled?: boolean;
   pickupEnabled?: boolean;
+  cuisineType?: string;
+  description?: string;
+  rating?: number;
+  deliveryTime?: string;
+  deliveryFee?: number;
 };
 
 export type OrderStatus = 'new' | 'in-progress' | 'ready' | 'completed';
@@ -60,6 +67,7 @@ export type FirestoreCartItem = {
     imageHint?: string;
   selectedSize?: SizeOption;
     selectedAddons?: AddonOption[];
+    observation?: string;
 };
 
 
@@ -70,6 +78,7 @@ export type CartItem = {
   quantity: number;
   selectedSize?: SizeOption;
   selectedAddons?: AddonOption[];
+  observation?: string;
 };
 
 export type OrderItem = {
@@ -80,6 +89,7 @@ export type OrderItem = {
   category?: string; // Category for analytics
   selectedSize?: SizeOption;
   addons?: AddonOption[];
+  observation?: string;
 };
 
 export type CustomerProfile = {
@@ -95,7 +105,7 @@ export type Order = {
   items: OrderItem[];
   total: number;
   status: OrderStatus;
-  timestamp: Timestamp; // Firestore Timestamp
+  timestamp: Timestamp | FieldValue; // Firestore Timestamp or server timestamp placeholder while writing
   customerUid: string; // The UID of the customer who placed the order
   customer?: { // Optional: denormalized customer data for quick display
     name: string;
@@ -103,6 +113,7 @@ export type Order = {
   },
   deliveryType?: 'pickup' | 'delivery';
   deliveryAddress?: string;
+  customerNote?: string;
   rating?: number; // Optional: Customer rating from 1 to 5
   review?: string; // Optional: Customer's text review
 };

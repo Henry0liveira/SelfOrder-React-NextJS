@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { updateEmail, updatePassword } from 'firebase/auth';
+// firebase/firestore `doc` and `updateDoc` already imported above
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -26,12 +28,16 @@ function readFileAsDataUrl(file: File) {
 export default function StaffSettingsPage() {
   const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
+  const auth = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [hours, setHours] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
   const [deliveryEnabled, setDeliveryEnabled] = useState(true);
@@ -52,6 +58,11 @@ export default function StaffSettingsPage() {
           setDeliveryEnabled(data.deliveryEnabled ?? true);
           setPickupEnabled(data.pickupEnabled ?? true);
         }
+        // load user email
+        try {
+          const u = auth.currentUser;
+          setEmail(u?.email || '');
+        } catch {}
       } catch (e) {
         console.warn(e);
       } finally {
@@ -67,14 +78,47 @@ export default function StaffSettingsPage() {
     setLoading(true);
     try {
       const ref = doc(firestore, 'restaurants', user.uid);
-      await updateDoc(ref, {
-        name,
-        hours,
-        logoUrl,
-        bannerUrl,
-        deliveryEnabled,
-        pickupEnabled,
-      });
+      await updateDoc(ref, { name, hours, logoUrl, bannerUrl, deliveryEnabled, pickupEnabled });
+
+      // update auth email if changed
+      const current = auth.currentUser;
+      if (current && email && current.email !== email) {
+        try {
+          await updateEmail(current, email);
+          // update users doc email
+          const userRef = doc(firestore, 'users', current.uid);
+          await updateDoc(userRef, { email });
+        } catch (err: any) {
+          console.error('Failed to update email', err);
+          if (err.code === 'auth/requires-recent-login') {
+            toast({ title: 'Reautenticação necessária', description: 'Por favor, faça login novamente e tente alterar o e-mail.', variant: 'destructive' });
+            setLoading(false);
+            return;
+          }
+          throw err;
+        }
+      }
+
+      // update password if provided
+      if (password) {
+        if (password !== confirmPassword) {
+          toast({ title: 'Erro', description: 'As senhas não coincidem.', variant: 'destructive' });
+          setLoading(false);
+          return;
+        }
+        try {
+          if (current) await updatePassword(current, password);
+        } catch (err: any) {
+          console.error('Failed to update password', err);
+          if (err.code === 'auth/requires-recent-login') {
+            toast({ title: 'Reautenticação necessária', description: 'Por favor, faça login novamente e tente alterar a senha.', variant: 'destructive' });
+            setLoading(false);
+            return;
+          }
+          throw err;
+        }
+      }
+
       toast({ title: 'Alterações salvas' });
     } catch (err) {
       console.error(err);
@@ -103,6 +147,17 @@ export default function StaffSettingsPage() {
               <div>
                 <Label>Horário de Funcionamento</Label>
                 <Textarea value={hours} onChange={(e) => setHours(e.target.value)} placeholder="Ex: Seg-Sex 09:00-18:00\nSáb 09:00-14:00" />
+              </div>
+
+              <div>
+                <Label>E-mail de Login</Label>
+                <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+
+              <div>
+                <Label>Nova senha (opcional)</Label>
+                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Deixe em branco para manter a senha atual" />
+                <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirme a nova senha" className="mt-2" />
               </div>
 
               <div className="space-y-4">
